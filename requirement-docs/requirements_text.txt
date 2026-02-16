@@ -1,0 +1,656 @@
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+ 
+PROPOSAL FOR CLINICAL MANAGEMENT SYSTEM - PROPOSAL 
+This Agreement is entered into on this 26th day of January 2026,  
+by and between  
+Opeyemi Abdulrauff (Client), residing at Lagos, Nigeria 
+and 
+Forahia Enterprise (Consultant), Abuja, Nigeria. 
+ 
+1. INTRODUCTION 
+This agreement outlines the terms and conditions under which Forahia Enterprise will 
+provide consulting services for the design, development, and deployment of a 
+comprehensive Clinical Management System for the Client. The platform will integrate 
+patient m anagement, appointments, clinical visits, treatments, prescriptions, 
+pharmacy inventory, and billing into a unified web-based system. 
+Technology Stack: 
+• Frontend: React.js - Modern web application 
+• Backend & Admin: Laravel with Filament - Administrative dashboard 
+• Database: MySQL 
+• Infrastructure: Hostinger VPS Cloud Hosting 
+ 
+2. PROJECT OVERVIEW 
+The Clinical Management System aims to digitize and streamline clinic operations, 
+enabling efficient management of patient records, appointments, treatments, 
+prescriptions, and billing. The system will serve healthcare practitioners, nurses, and 
+administrative staff with role-based access to ensure secure handling of medical data. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+3. PROJECT OBJECTIVES 
+• Develop a user -friendly web application for patient registration and 
+management 
+• Create appointment scheduling and tracking system 
+• Build clinical visit documentation with vitals recording and diagnosis 
+• Implement treatment and therapy management modules 
+• Establish prescription generation and pharmacy inventory tracking 
+• Automate billing and payment processing with receipt generation 
+• Provide comprehensive reporting and analytics dashboard 
+• Ensure data security and audit logging for compliance 
+ 
+4. SCOPE OF WORK 
+In-Scope 
+Deliverable Description 
+Patient Management 
+Module 
+Registration, demographics, contact info, next of kin details, 
+medical history 
+Appointments Module Scheduling, calendar views, status tracking, reminders 
+Clinical Visits Module 
+Visit documentation, vitals recording (BP, weight, glucose, BMI), 
+complaints, diagnosis 
+Treatment & Therapy 
+Module 
+Treatment types, therapy methods, progress notes, health status 
+tracking 
+Prescription Module Drug selection, dosage instructions, prescription printing 
+Pharmacy/Inventory 
+Module Drug catalog, stock management, low stock alerts, expiry tracking 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Deliverable Description 
+Billing & Payments Module 
+Automatic billing, payment recording, receipt generation, 
+outstanding balance tracking 
+Admin Dashboard 
+Comprehensive dashboard with reports, analytics, and system 
+management 
+User Role Management Role-based access for Admin, Doctor, Nurse, and Receptionist 
+ 
+Out-of-Scope 
+Item Description 
+Laboratory equipment 
+integration 
+Physical lab machine connections or automated 
+result imports 
+Medical imaging storage 
+X-ray, MRI, or other imaging file management 
+beyond basic upload 
+Insurance processing 
+Health insurance claims, HMO integrations, or third-
+party billing 
+Telemedicine features Video consultations or remote diagnosis capabilities 
+Mobile native apps 
+iOS/Android native applications (web app is 
+responsive for tablets) 
+Multi-clinic/chain 
+management Features for managing multiple clinic locations 
+Legal compliance 
+certification 
+Client responsible for NAFDAC, HIPAA, or other 
+regulatory compliance 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+ 
+5. PROBLEM STATEMENT 
+The growing need for efficient healthcare delivery requires a cohesive digital system 
+where clinics can manage patient information, track appointments, document clinical 
+encounters, manage pharmacy inventory, and handle billing in one platform. Existing 
+solutions are often fragmented, expensive, or poorly suited for small -to-medium 
+clinics. There is a significant need for an affordable, integrated system that streamlines 
+clinical workflows while maintaining data security and audit compliance. 
+ 
+6. PROPOSED SOLUTION 
+The Clinical Management System will integrate patient records, appointments, clinical 
+visits, treatments, prescriptions, pharmacy management, and billing into one unified 
+web-based platform. The system will ensure accessibility across desktop and tablet 
+devices, provide role -based access for different staff levels, and maintain 
+comprehensive audit logs for compliance. It will feature automated billing calculations, 
+stock alerts, and detailed reporting to support clinic decision-making. 
+ 
+7. PROJECT EXPECTED DELIVERABLES 
+SN Deliverable Description 
+1 
+Patient Management 
+System 
+Registration forms, patient search, profile views, 
+medical history timeline 
+2 
+Appointment Scheduling 
+System 
+Calendar interface, booking forms, status 
+management, reminders 
+3 
+Clinical Visit 
+Documentation 
+Visit creation, vitals input, diagnosis recording, 
+follow-up scheduling 
+4 
+Treatment & Therapy 
+Records 
+Treatment selection, therapy methods, progress 
+notes, health summaries 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+SN Deliverable Description 
+5 
+Prescription 
+Management 
+Drug selection, dosage instructions, professional 
+prescription printing 
+6 
+Pharmacy Inventory 
+System 
+Drug catalog, stock tracking, low stock alerts, 
+expiry monitoring 
+7 Billing & Payment System 
+Automatic billing, payment recording, receipt 
+printing, balance tracking 
+8 
+Admin Dashboard & 
+Reports 
+Clinic overview, revenue analytics, patient 
+statistics, drug usage reports 
+9 
+User Management & 
+Security 
+Role-based access control, audit logging, data 
+backup 
+10 
+Comprehensive 
+Documentation 
+Technical documentation, user manuals, training 
+materials 
+ 
+8. ROLES AND RESPONSIBILITIES 
+8.1 Client Responsibilities 
+Responsibility Description 
+Provide project 
+requirements 
+Define clinic workflows, user roles, and specific feature 
+needs 
+Approve milestones 
+Review and approve deliverables within agreed timelines 
+(1 week review window) 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Responsibility Description 
+Participate in feedback 
+Provide timely feedback during bi -weekly project 
+updates and demos 
+Supply branding assets Provide clinic logo, brand colors, and contact information 
+Domain and hosting 
+setup 
+Provide domain name or hosting account access if 
+preferred 
+Staff availability 
+Make key staff available for requirements gathering and 
+training 
+Legal compliance 
+Ensure clinic operations comply with local healthcare 
+regulations 
+ 
+8.2 Consultant Responsibilities 
+Responsibility Description 
+Develop project plan 
+Prepare detailed timelines, sprint plans, technical 
+architecture, and milestones 
+UI/UX design 
+Create intuitive interface designs for all user roles (Admin, 
+Doctor, Nurse, Receptionist) 
+Implement 
+development 
+Complete frontend (React), backend (Laravel/Filament), 
+and database (MySQL) development 
+System integration 
+Integrate all modules (patient, appointments, visits, 
+treatments, prescriptions, billing) 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Responsibility Description 
+Conduct testing 
+Perform quality assurance, security testing, and 
+performance optimization 
+Deploy 
+infrastructure 
+Set up Hostinger VPS servers, configure domains, SSL, and 
+monitoring 
+Provide 
+documentation 
+Deliver technical documentation, user guides, and training 
+materials 
+Post-launch support 
+Provide three months  of technical support and bug fixes 
+after launch 
+ 
+9. REMUNERATION 
+The Client agrees to pay Forahia Enterprise the following amounts for the complete 
+development and deployment of the Clinical Management System: 
+Component 
+Amount 
+(USD) 
+Amount 
+(NGN) 
+Frontend Development (React)  $2,500  ₦3,500,000  
+Backend & Admin Development 
+(Laravel/Filament)  $2,800  ₦3,920,000  
+Database Design & Optimization  $800 ₦1,120,000  
+UI/UX Design  $1,100  ₦1,540,000  
+Quality Assurance & Security  $900 ₦1,260,000  
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Component 
+Amount 
+(USD) 
+Amount 
+(NGN) 
+Infrastructure Setup & Deployment  $400 ₦560,000  
+Project Management  $1,200  ₦1,680,000  
+Subtotal  $9,700  ₦13,580,000  
+Discount Applied  ($700)  (₦980,000)  
+TOTAL  PROJECT  BUDGET  $9,000  ₦12,600,000  
+ 
+Exchange rate: $1 = ₦1,400 
+ 
+Payment Terms: 
+Payment is required before the commencement of each phase according to the 
+following milestone schedule: 
+Milestone Deliverable Percentage 
+Amount 
+(USD) 
+Amount 
+(NGN) 
+1. Contract  
+Signing  
+Project kick -off, team 
+assembly, design phase 
+initiation  60% $5,400  ₦7,560,000  
+2. Design  
+Approval  
+Completed UI/UX 
+designs, prototypes 
+approved  10% $900 ₦1,260,000  
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Milestone Deliverable Percentage 
+Amount 
+(USD) 
+Amount 
+(NGN) 
+4. 
+Frontend  
+Beta 
+React app functional, 
+integrated with API, 
+ready for UAT  10% $900 ₦1,260,000  
+5. Final  
+Delivery  
+System deployed, staff 
+trained, documentation 
+complete  10% $900 ₦1,260,000  
+TOTAL  
+ 
+100% $9,000  ₦12,600,000  
+ 
+Annual Support (Optional): ₦1,200,000 for Year 2 onwards covering updates, 
+monitoring, security patches, and minor feature enhancements. 
+ 
+10. PROJECT IMPLEMENTATION PLAN 
+Phase Timeline Description 
+Phase  1: Discovery  
+& Design  
+Weeks 
+1-3 
+Requirements finalization, workflow 
+mapping, UI/UX design for all modules, 
+prototype approval  
+Phase  2: Backend  
+Development  
+Weeks 
+4-8 
+Laravel API development, Filament admin 
+panels, MySQL database setup, core 
+business logic  
+Phase  3: Frontend  
+Development  
+Weeks 
+6-10 
+React application development, API 
+integration, form components, dashboard 
+widgets (overlaps with Phase 2)  
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+Phase Timeline Description 
+Phase  4: 
+Integration  & 
+Testing  
+Weeks  
+9-11 
+Module integration, comprehensive testing, 
+security audit, bug fixes, UAT  
+Phase  5: 
+Deployment  & 
+Training  Week 12  
+Production deployment, staff training, 
+documentation handover, go -live support  
+ 
+Total Duration: 12 weeks (3 months) 
+ 
+11. CONFIDENTIALITY 
+Both parties agree to keep all proprietary and confidential information private and 
+secure during and beyond the project's duration. This includes patient data, business 
+strategies, technical architecture, and financial details. Forahia Enterprise agrees not 
+to disclose or reuse Client's proprietary concepts for other projects without written 
+consent. 
+Patient data handling will follow industry best practices for security and privacy. 
+Forahia implements technical safeguards; Client is responsible for staff training on 
+data protection procedures. 
+ 
+12. INTELLECTUAL PROPERTY RIGHTS 
+Upon full payment of all milestones, all intellectual property rights for the completed 
+system (source code, designs, documentation, and related assets) will transfer to the 
+Client. Forahia Enterprise retains the right to showcase the project in portfolios  and 
+case studies without revealing proprietary business logic, patient data, or confidential 
+information. 
+Third-party services (hosting, email, SMS) remain subject to their respective terms of 
+service. 
+ 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+13. TERM AND TERMINATION 
+This agreement shall commence on the date of signing and continue until project 
+completion and warranty period expiration (approximately 3 months). 
+Termination Clause: 
+• Either party may terminate this agreement with 30 days' written notice 
+• Client remains responsible for payment for all work completed up to 
+termination date 
+• Upon termination, Forahia will deliver all completed work and documentation 
+prorated to payment received 
+• If Client terminates after Phase 3 (Backend Beta), all frontend code and designs 
+will be delivered 
+• If terminated by Forahia due to non-payment, all work ceases immediately and 
+IP remains with Forahia until payment is settled 
+Suspension: 
+• Project may be suspended for up to 30 days at Client's request (timeline adjusts 
+accordingly) 
+• Suspension beyond 30 days may incur team reallocation fees of $1,500/month 
+ 
+14. WARRANTIES AND SUPPORT 
+Development Warranty: Forahia Enterprise warrants that: 
+• All code will be original or properly licensed 
+• The system will function as described in deliverables 
+• No malicious code or backdoors will be included 
+• Best security practices will be implemented 
+Post-Launch Support (3 Months): 
+• Bug fixes for issues arising from development errors 
+• Minor adjustments to workflows or business logic 
+• Monitoring and alert response for server issues 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+• Response time: Critical issues (24 hours), Standard issues (72 hours) 
+Exclusions from Warranty: 
+• Issues caused by third-party service changes 
+• Problems arising from Client's server modifications post-handover 
+• Bugs in third-party libraries or frameworks 
+• Issues caused by unauthorized code changes by Client or third parties 
+ 
+15. LIMITATION OF LIABILITY 
+Forahia Enterprise's total liability shall not exceed the total amount paid by Client 
+under this agreement. Forahia is not liable for: 
+• Lost profits or business interruption 
+• Data loss due to Client's failure to maintain backups 
+• Issues arising from third-party service outages 
+• Regulatory compliance violations 
+ 
+16. GOVERNING LAW 
+This contract shall be governed by and interpreted in accordance with the laws of the 
+Federal Republic of Nigeria. Any disputes arising from this agreement shall first 
+attempt resolution through good -faith negotiation. If unresolved, disputes shall be 
+submitted to arbitration in Abuja, Nigeria, under the Arbitration and Conciliation Act. 
+ 
+17. ENTIRE AGREEMENT 
+This agreement constitutes the entire understanding between the parties and 
+supersedes all prior agreements, whether written or oral. Any amendments must be 
+in writing and signed by both parties. 
+ 
+ 
+ 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+18. NOTICES 
+All notices under this agreement shall be sent via email to: 
+Client: Opeyemi Abdulrauff's email 
+Consultant: biz.forahia@gmail.com 
+With copy to: 
+Forahia Enterprise 
+Abuja, Nigeria 
+Mobile: +2347065910449 
+ 
+SIGNATURES 
+Opeyemi Abdulrauff (Client) 
+Signature: __________________________________________________________ 
+Date: ______________________________________________________________ 
+ 
+Forahia Enterprise (Consultant) 
+Signature: __________________________________________________________ 
+Date: ___________26th Jan 2026________________________________________ 
+ 
+Witness 1: 
+Name: ______________________________________________________________ 
+Signature: __________________________________________________________ 
+Date: ______________________________________________________________ 
+ 
+Witness 2: 
+Name: ______________________________________________________________ 
+Signature: __________________________________________________________ 
+Date: ______________________________________________________________ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+ 
+APPENDIX A: SYSTEM SPECIFICATIONS 
+A.1 Frontend (React Web Application) 
+• Modern responsive design for desktop and tablet use 
+• Optimized for clinical workflows (patient registration, visit documentation, 
+prescription printing) 
+• Role-based interface (Admin, Doctor, Nurse, Receptionist) 
+A.2 Backend & Admin (Laravel with Filament) 
+• Secure API for frontend communication 
+• Comprehensive admin dashboard with reporting 
+• Automated billing calculations 
+• Audit logging for all data access 
+A.3 Database (MySQL) 
+• Secure storage for patient records, appointments, visits, prescriptions, and 
+billing 
+• Automated backups with encryption 
+• Optimized for clinic workload patterns 
+A.4 Infrastructure (Hostinger) 
+• VPS hosting with SSL encryption 
+• Daily automated backups 
+• 99.9% uptime monitoring 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+FORAHIA ENTEPRISE 
+biz@forahia.org.ng 
+www.forahia.org.ng 
+ 
+ 
+            07065910449 
+ 
+Independence Avenue Central Business District, Abuja, Nigeria 
+` 
+ 
+APPENDIX B: ACCEPTANCE CRITERIA 
+Project deliverables will be considered complete when: 
+1. Functional Requirements: All modules in Section 7 operate without critical bugs 
+2. Performance: System responds within 2 seconds for all operations 
+3. Security: Pass security audit with no critical vulnerabilities 
+4. UAT: Client approves user acceptance testing with clinic staff 
+5. Documentation: All user manuals and technical documentation delivered 
+6. Training: Staff training completed with at least 3 Client representatives 
+7. Go-Live: System successfully processing real patient data for 1 week without 
+issues 
+ 
+This contract is ready for signature. Please review all sections carefully before signing. 
+Forahia Enterprise looks forward to delivering a world -class Clinical Management 
+System for your healthcare practice. 
+ 
+Prepared by: Forahia Enterprise 
+Date: January 26, 2026 
+Validity: 2 week 
+Contact: biz@forahia.org.ng | chijindu.nwokeohuru@gmail.com | 07065910449 
+ 

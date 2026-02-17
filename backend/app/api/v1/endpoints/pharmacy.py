@@ -8,8 +8,10 @@ from app.models.drug import Drug as DrugModel
 from app.models.prescription import Prescription as PrescriptionModel
 from app.models.bill import Bill as BillModel, PaymentStatus
 from app.models.clinic_settings import ClinicSettings as ClinicSettingsModel
+from app.models.drug_category import DrugCategory as DrugCategoryModel
 from app.schemas.drug import Drug, DrugCreate, DrugUpdate, DrugPage
 from app.schemas.prescription import Prescription, DispenseRequest
+from app.schemas.drug_category import DrugCategory as DrugCategorySchema, DrugCategoryCreate
 
 router = APIRouter()
 
@@ -213,6 +215,70 @@ def delete_drug(
     db.delete(drug)
     db.commit()
     return drug
+
+@router.get("/categories", response_model=List[DrugCategorySchema])
+def list_categories(
+    db: Session = Depends(deps.get_db),
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    List all drug categories. Migrates from ClinicSettings if empty.
+    """
+    categories = db.query(DrugCategoryModel).all()
+    
+    if not categories:
+        # Check if we have categories in ClinicSettings to migrate
+        settings = db.query(ClinicSettingsModel).first()
+        if settings and settings.drug_categories:
+            cat_list = [c.strip() for c in settings.drug_categories.split(',') if c.strip()]
+            for cat_name in cat_list:
+                # Avoid duplicates just in case
+                exists = db.query(DrugCategoryModel).filter(DrugCategoryModel.name == cat_name).first()
+                if not exists:
+                    new_cat = DrugCategoryModel(name=cat_name)
+                    db.add(new_cat)
+            db.commit()
+            categories = db.query(DrugCategoryModel).all()
+            
+    return categories
+
+@router.post("/categories", response_model=DrugCategorySchema)
+def create_category(
+    *,
+    db: Session = Depends(deps.get_db),
+    category_in: DrugCategoryCreate,
+    current_user: Any = Depends(deps.get_current_active_superuser),
+) -> Any:
+    """
+    Create a new drug category.
+    """
+    category = db.query(DrugCategoryModel).filter(DrugCategoryModel.name == category_in.name).first()
+    if category:
+        raise HTTPException(status_code=400, detail="Category already exists")
+    
+    category = DrugCategoryModel(**category_in.model_dump())
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+@router.delete("/categories/{id}", response_model=dict)
+def delete_category(
+    *,
+    db: Session = Depends(deps.get_db),
+    id: int,
+    current_user: Any = Depends(deps.get_current_active_superuser),
+) -> Any:
+    """
+    Delete a drug category.
+    """
+    category = db.query(DrugCategoryModel).filter(DrugCategoryModel.id == id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    db.delete(category)
+    db.commit()
+    return {"msg": "Category deleted successfully"}
 
 @router.delete("/dispense/{id}", response_model=dict)
 def cancel_dispense(

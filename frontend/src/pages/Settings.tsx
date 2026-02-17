@@ -9,7 +9,10 @@ import {
   Loader2,
   Check, 
   Eye, 
-  EyeOff
+  EyeOff,
+  ImagePlus,
+  Plus,
+  X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -100,6 +103,7 @@ const Settings = () => {
     website: '',
     address: '',
     consultation_fee: 50,
+    logo_url: '',
   });
 
   useEffect(() => {
@@ -111,6 +115,7 @@ const Settings = () => {
         website: clinicSettings.website || '',
         address: clinicSettings.address || '',
         consultation_fee: clinicSettings.consultation_fee || 50,
+        logo_url: clinicSettings.logo_url || '',
       });
     }
   }, [clinicSettings]);
@@ -129,13 +134,41 @@ const Settings = () => {
 
   const handleClinicSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateClinicMutation.mutate(clinicData);
+    updateClinicMutation.mutate(clinicData as any);
   };
   
   const handleBillingSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      updateClinicMutation.mutate(clinicData);
+      updateClinicMutation.mutate(clinicData as any);
   }
+
+  // --- Drug Category Management (Relational) ---
+  const { data: categories, isLoading: isCategoriesLoading } = useQuery({
+    queryKey: ['drug-categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/pharmacy/categories');
+      return response.data;
+    },
+  });
+
+  const addCategoryMutation = useMutation({
+    mutationFn: (name: string) => apiClient.post('/pharmacy/categories', { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drug-categories'] });
+      setSuccessMsg('Category added successfully.');
+    },
+    onError: (err: any) => {
+      setErrorMsg(err.response?.data?.detail || 'Failed to add category.');
+    }
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/pharmacy/categories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drug-categories'] });
+      setSuccessMsg('Category removed successfully.');
+    },
+  });
 
   return (
     <div className="space-y-8">
@@ -240,12 +273,99 @@ const Settings = () => {
                       />
                     </div>
                     <div className="md:col-span-2">
+                       <label className="block text-sm font-bold text-slate-700 mb-2">Clinic Logo</label>
+                       <div className="flex items-center gap-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                          <div className="w-20 h-20 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden">
+                             <img 
+                               src={clinicData.logo_url || '/assets/logo.png'} 
+                               alt="Clinic Logo" 
+                               className="max-w-full max-h-full object-contain"
+                             />
+                          </div>
+                          <div className="flex-1 space-y-2">
+                             <p className="text-xs text-slate-500 font-medium">Recommended size: 512x512px. PNG or SVG preferred.</p>
+                             <div className="flex items-center gap-2">
+                                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-xl cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
+                                   <ImagePlus size={14} />
+                                   Choose Image
+                                   <input 
+                                      type="file" 
+                                      className="hidden" 
+                                      accept="image/*"
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        try {
+                                          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                                          const uploadBase = API_URL.endsWith('/api/v1') ? API_URL.replace('/api/v1', '') : API_URL;
+                                          const response = await apiClient.post('/upload/', formData, {
+                                            headers: { 'Content-Type': 'multipart/form-data' }
+                                          });
+                                          let finalUrl = response.data.url;
+                                          if (finalUrl.startsWith('/')) finalUrl = `${uploadBase}${finalUrl}`;
+                                          setClinicData({...clinicData, logo_url: finalUrl});
+                                          setSuccessMsg('Logo uploaded. Click Save to apply.');
+                                        } catch (err) {
+                                          console.error(err);
+                                          setErrorMsg('Failed to upload logo.');
+                                        }
+                                      }}
+                                   />
+                                </label>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-bold text-slate-700 mb-2">Clinic Address</label>
                       <textarea 
                         value={clinicData.address}
                         onChange={(e) => setClinicData({...clinicData, address: e.target.value})}
                         className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 outline-none h-24 resize-none"
                       />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-4">
+                       <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <label className="text-sm font-bold text-slate-700">Inventory Drug Categories</label>
+                          {isCategoriesLoading && <Loader2 size={16} className="animate-spin text-sky-600" />}
+                       </div>
+                       <div className="flex flex-wrap gap-2">
+                          {categories?.map((cat: { id: number, name: string }) => (
+                             <div key={cat.id} className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-100 rounded-full text-xs font-bold group">
+                                {cat.name}
+                                <button 
+                                  type="button"
+                                  onClick={() => deleteCategoryMutation.mutate(cat.id)}
+                                  className="text-sky-300 hover:text-sky-600 transition-colors"
+                                >
+                                   <X size={12} />
+                                </button>
+                             </div>
+                          ))}
+                          <div className="relative">
+                             <input 
+                               type="text"
+                               placeholder="New Category..."
+                               onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                     e.preventDefault();
+                                     const val = (e.target as HTMLInputElement).value.trim();
+                                     if (val) {
+                                        addCategoryMutation.mutate(val);
+                                        (e.target as HTMLInputElement).value = '';
+                                     }
+                                  }
+                               }}
+                               className="px-4 py-1.5 bg-white border border-slate-200 rounded-full text-xs outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 w-32"
+                             />
+                             <Plus className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={12} />
+                          </div>
+                       </div>
+                       <p className="text-xs text-slate-400">These categories will be available when adding or editing items in the Pharmacy module.</p>
                     </div>
                   </div>
                   <div className="flex justify-end pt-4">

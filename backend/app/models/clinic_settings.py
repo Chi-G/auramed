@@ -11,3 +11,5 @@ class ClinicSettings(Base):
     consultation_fee = Column(Float, default=50.0)
     currency_symbol = Column(String(10), default="₦")
     currency_name = Column(String(50), default="Naira")
+    logo_url = Column(String(255), nullable=True)
+    drug_categories = Column(Text, default="General,Antibiotics,Painkillers,Antimalarials,Vitamins")

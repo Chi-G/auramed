@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../services/api';
 import { 
   LayoutDashboard, 
   Users, 
@@ -23,6 +25,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  // Fetch Clinic Settings for Global Branding
+  const { data: clinicSettings } = useQuery({
+    queryKey: ['clinic-settings'],
+    queryFn: async () => {
+      const response = await apiClient.get('/settings/');
+      return response.data;
+    },
+  });
+
+  const appName = clinicSettings?.name || 'AuraMed';
+  const appLogo = clinicSettings?.logo_url || '/assets/logo.png';
 
   const toggleSidebar = () => setIsCollapsed(!isCollapsed);
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -86,10 +100,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Mobile Header / Hamburger */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-            <img src="/assets/logo.png" alt="AuraMed" className="w-full h-full object-contain logo-tint-sky" />
+          <div className="w-10 h-10 p-1.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+            <img src={appLogo} alt={appName} className="max-w-full max-h-full object-contain" />
           </div>
-          <span className="font-bold text-slate-900 tracking-tight">AuraMed</span>
+          <span className="font-bold text-slate-900 tracking-tight">{appName}</span>
         </div>
         <button 
           onClick={toggleMobileMenu}
@@ -119,12 +133,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="flex items-center gap-3">
             {!isCollapsed ? (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 p-1.5 rounded-xl bg-white shadow-lg flex items-center justify-center">
-                  <img src="/assets/logo.png" alt="Logo" className="w-full h-full object-contain logo-tint-sky" />
+                <div className="w-10 h-10 p-1.5 rounded-xl bg-white shadow-lg flex items-center justify-center overflow-hidden">
+                  <img src={appLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent leading-none">
-                    AuraMed
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent leading-none truncate max-w-[120px]">
+                    {appName}
                   </h1>
                   <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1 font-bold">
                     Clinical Suite
@@ -132,8 +146,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </div>
               </div>
             ) : (
-              <div className="w-12 h-12 p-2.5 rounded-xl bg-white shadow-xl flex items-center justify-center">
-                <img src="/assets/logo.png" alt="Logo" className="w-full h-full object-contain logo-tint-sky" />
+              <div className="w-12 h-12 p-2.5 rounded-xl bg-white shadow-xl flex items-center justify-center overflow-hidden">
+                <img src={appLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
               </div>
             )}
           </div>

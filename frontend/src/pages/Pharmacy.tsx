@@ -28,16 +28,6 @@ import AddDrugModal from '../components/AddDrugModal';
 import DispenseDrugModal from '../components/DispenseDrugModal';
 import Pagination from '../components/Pagination';
 
-const CATEGORIES = [
-  "Antibiotics", 
-  "Analgesics", 
-  "Supplements", 
-  "First Aid", 
-  "Cardiology",
-  "Antimalarial",
-  "Pediatric"
-];
-
 const Pharmacy = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -48,6 +38,20 @@ const Pharmacy = () => {
   const [drugToEdit, setDrugToEdit] = useState<Drug | null>(null);
   const [drugToDispense, setDrugToDispense] = useState<Drug | null>(null);
   const queryClient = useQueryClient();
+
+  // Fetch Categories from the new relational table
+  const { data: categoryData } = useQuery({
+    queryKey: ['drug-categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/pharmacy/categories');
+      return response.data;
+    }
+  });
+
+  const categories = (categoryData || []).map((c: any) => c.name);
+  if (categories.length === 0) {
+    categories.push("Antibiotics", "Analgesics", "Supplements", "First Aid");
+  }
 
   const { data, isLoading } = useQuery<PaginatedResponse<Drug>>({
     queryKey: ['drugs', page, searchTerm, selectedCategory],
@@ -217,7 +221,7 @@ const Pharmacy = () => {
               >
                 All Categories
               </button>
-              {CATEGORIES.map(category => (
+              {categories.map((category: string) => (
                 <button
                   key={category}
                   onClick={() => {

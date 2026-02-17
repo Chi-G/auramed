@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { X, Loader2, Pill } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../services/api';
 import type { Drug } from '../types';
 
@@ -27,6 +27,16 @@ interface AddDrugModalProps {
 
 const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit }) => {
   const queryClient = useQueryClient();
+
+  // Fetch Categories from the new relational table
+  const { data: categories } = useQuery({
+    queryKey: ['drug-categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/pharmacy/categories');
+      return response.data;
+    }
+  });
+
   const {
     register,
     handleSubmit,
@@ -114,13 +124,12 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
                   className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white"
                 >
                   <option value="">Select Category</option>
-                  <option value="Antibiotics">Antibiotics</option>
-                  <option value="Analgesics">Analgesics</option>
-                  <option value="Supplements">Supplements</option>
-                  <option value="First Aid">First Aid</option>
-                  <option value="Cardiology">Cardiology</option>
-                  <option value="Antimalarial">Antimalarial</option>
-                  <option value="Pediatric">Pediatric</option>
+                  {(categories || []).map((cat: {id: number, name: string}) => (
+                    <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  ))}
+                  {(!categories || categories.length === 0) && ["Antibiotics", "Analgesics", "Supplements", "First Aid"].map((cat: string) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
                 </select>
               </div>
               <div>

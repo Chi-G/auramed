@@ -10,6 +10,8 @@ class ClinicSettingsBase(BaseModel):
     consultation_fee: Optional[float] = 50.0
     currency_symbol: Optional[str] = "₦"
     currency_name: Optional[str] = "Naira"
+    logo_url: Optional[str] = None
+    drug_categories: Optional[str] = "General,Antibiotics,Painkillers,Antimalarials,Vitamins"
 
 class ClinicSettingsCreate(ClinicSettingsBase):
     pass

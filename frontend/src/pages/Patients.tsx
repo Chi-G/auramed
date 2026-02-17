@@ -15,7 +15,9 @@ import apiClient from '../services/api';
 import type { Patient, PaginatedResponse } from '../types';
 import RegisterPatientModal from '../components/RegisterPatientModal';
 import EditPatientModal from '../components/EditPatientModal';
+import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
+import toast from 'react-hot-toast';
 
 const Patients = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +25,8 @@ const Patients = () => {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -42,14 +46,19 @@ const Patients = () => {
     mutationFn: (id: string) => apiClient.delete(`/patients/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Patient deleted successfully');
+      setIsDeleteModalOpen(false);
+      setPatientToDelete(null);
     },
+    onError: () => {
+      toast.error('Failed to delete patient');
+    }
   });
 
-  const handleDelete = (e: React.MouseEvent, patient: Patient) => {
+  const handleDeleteClick = (e: React.MouseEvent, patient: Patient) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete ${patient.first_name} ${patient.last_name}?`)) {
-      deleteMutation.mutate(patient.id);
-    }
+    setPatientToDelete(patient);
+    setIsDeleteModalOpen(true);
   };
 
   const handleEdit = (e: React.MouseEvent, patient: Patient) => {
@@ -111,7 +120,7 @@ const Patients = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                [...Array(5)].map((_, i) => (
+                [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded-lg"></div></td>
                     <td className="px-6 py-4"><div className="h-5 w-32 bg-slate-100 rounded-lg"></div></td>
@@ -172,7 +181,7 @@ const Patients = () => {
                         <Pencil size={18} />
                       </button>
                       <button 
-                         onClick={(e) => handleDelete(e, patient)}
+                         onClick={(e) => handleDeleteClick(e, patient)}
                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                          title="Delete Patient"
                       >
@@ -212,6 +221,17 @@ const Patients = () => {
           setSelectedPatient(null);
         }} 
         patient={selectedPatient}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => patientToDelete && deleteMutation.mutate(patientToDelete.id)}
+        title="Delete Patient"
+        message={`Are you sure you want to delete ${patientToDelete?.first_name} ${patientToDelete?.last_name}? This will permanently remove all their clinical records.`}
+        confirmLabel="Delete Patient"
+        isDanger={true}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

@@ -5,7 +5,9 @@ import * as z from 'zod';
 import { X, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import apiClient from '../services/api';
-import type { Patient } from '../types';
+import type { Patient, Appointment } from '../types';
+
+import toast from 'react-hot-toast';
 
 const appointmentSchema = z.object({
   patient_id: z.string().min(1, 'Patient selection is required'),
@@ -26,21 +28,46 @@ type AppointmentFormData = {
 interface ScheduleAppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  appointment?: Appointment;
 }
 
-const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isOpen, onClose }) => {
+const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isOpen, onClose, appointment }) => {
   const queryClient = useQueryClient();
+  const isEditing = !!appointment;
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
+    setValue,
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       status: 'pending',
     }
   });
+
+  // Reset form when modal opens or appointment changes
+  React.useEffect(() => {
+    if (isOpen) {
+      if (appointment) {
+        setValue('patient_id', appointment.patient_id.toString()); // Ensure string
+        setValue('appointment_date', appointment.appointment_date.slice(0, 16)); // Format for datetime-local
+        setValue('reason_for_visit', appointment.reason_for_visit || '');
+        setValue('status', appointment.status);
+        setValue('notes', appointment.notes || '');
+      } else {
+        reset({
+          status: 'pending',
+          patient_id: '',
+          appointment_date: '',
+          reason_for_visit: '',
+          notes: ''
+        });
+      }
+    }
+  }, [isOpen, appointment, setValue, reset]);
 
   const { data: patients } = useQuery<Patient[]>({
     queryKey: ['patients'],
@@ -52,16 +79,27 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
   });
 
   const mutation = useMutation({
-    mutationFn: (data: AppointmentFormData) => 
-      apiClient.post('/appointments/', {
+    mutationFn: (data: AppointmentFormData) => {
+      if (isEditing && appointment) {
+        return apiClient.put(`/appointments/${appointment.id}`, {
+          ...data,
+          patient_id: data.patient_id
+        });
+      }
+      return apiClient.post('/appointments/', {
         ...data,
         patient_id: data.patient_id
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success(isEditing ? 'Appointment updated successfully' : 'Appointment scheduled successfully');
       reset();
       onClose();
     },
+    onError: () => {
+      toast.error(isEditing ? 'Failed to update appointment' : 'Failed to schedule appointment');
+    }
   });
 
   if (!isOpen) return null;
@@ -70,7 +108,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h2 className="text-xl font-bold text-slate-900">Schedule Appointment</h2>
+          <h2 className="text-xl font-bold text-slate-900">{isEditing ? 'Edit Appointment' : 'Schedule Appointment'}</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
             <X size={20} className="text-slate-500" />
           </button>
@@ -151,7 +189,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
               disabled={mutation.isPending}
               className="px-8 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-sky-500/25 flex items-center gap-2"
             >
-              {mutation.isPending ? <Loader2 size={18} className="animate-spin" /> : 'Schedule'}
+              {mutation.isPending ? <Loader2 size={18} className="animate-spin" /> : (isEditing ? 'Update Schedule' : 'Schedule')}
             </button>
           </div>
         </form>

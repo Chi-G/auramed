@@ -7,6 +7,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../services/api';
 import type { Drug } from '../types';
 
+import toast from 'react-hot-toast';
+
 const drugSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   description: z.string().optional(),
@@ -64,9 +66,13 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drugs'] });
+      toast.success(drugToEdit ? 'Medication updated successfully' : 'Medication added successfully');
       reset();
       onClose();
     },
+    onError: () => {
+      toast.error(drugToEdit ? 'Failed to update medication' : 'Failed to add medication');
+    }
   });
 
   if (!isOpen) return null;
@@ -103,11 +109,19 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
-                <input
+                <select
                   {...register('category')}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
-                  placeholder="e.g., Antibiotic"
-                />
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white"
+                >
+                  <option value="">Select Category</option>
+                  <option value="Antibiotics">Antibiotics</option>
+                  <option value="Analgesics">Analgesics</option>
+                  <option value="Supplements">Supplements</option>
+                  <option value="First Aid">First Aid</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Antimalarial">Antimalarial</option>
+                  <option value="Pediatric">Pediatric</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Unit Price ($) *</label>

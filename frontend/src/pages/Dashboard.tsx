@@ -66,22 +66,6 @@ const Dashboard: React.FC = () => {
   });
 
 
-  const { data: patients } = useQuery<Patient[]>({
-    queryKey: ['patients'],
-    queryFn: async () => {
-      const response = await apiClient.get('/patients/');
-      return response.data;
-    },
-  });
-
-  const { data: appointments } = useQuery<any[]>({
-    queryKey: ['appointments'],
-    queryFn: async () => {
-      const response = await apiClient.get('/appointments/');
-      return response.data;
-    },
-  });
-
   return (
     <div className="space-y-8">
       <div>
@@ -93,7 +77,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Patients" 
-          value={patients?.length?.toLocaleString() || '0'} 
+          value={summary?.total_patients?.toLocaleString() || '0'} 
           icon={Users} 
           trend="up" 
           trendValue="Live" 
@@ -107,7 +91,7 @@ const Dashboard: React.FC = () => {
         />
         <StatCard 
           title="Total Appointments" 
-          value={appointments?.length?.toLocaleString() || '0'} 
+          value={summary?.total_appointments?.toLocaleString() || '0'} 
           icon={Calendar} 
           trend="up" 
           trendValue="Active" 
@@ -117,7 +101,7 @@ const Dashboard: React.FC = () => {
           value={`₦${summary?.total_revenue?.toLocaleString() || '0'}`} 
           icon={Receipt} 
           trend="up" 
-          trendValue="Total Collected" 
+          trendValue="Total Billed" 
         />
       </div>
 
@@ -235,25 +219,37 @@ const Dashboard: React.FC = () => {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <h3 className="font-bold text-slate-900">Recent Appointments</h3>
-          <button className="text-xs font-bold text-sky-600 hover:text-sky-700 uppercase tracking-wider">View All</button>
+          <button onClick={() => navigate('/appointments')} className="text-xs font-bold text-sky-600 hover:text-sky-700 uppercase tracking-wider">View All</button>
         </div>
         <div className="divide-y divide-slate-100">
-          {[1,2,3,4].map((i) => (
-            <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
-                  <Clock size={20} className="text-slate-400" />
+          {summary?.recent_appointments?.length > 0 ? (
+            summary.recent_appointments.map((appt: any) => (
+              <div key={appt.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                    <Clock size={20} className="text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{appt.patient_name}</p>
+                    <p className="text-xs text-slate-500">
+                      {appt.reason} • {appt.appointment_date ? format(new Date(appt.appointment_date), 'h:mm a') : 'No time'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Patient #{1000 + i}</p>
-                  <p className="text-xs text-slate-500">Iridology Session • 10:30 AM</p>
-                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  appt.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                  appt.status === 'pending' ? 'bg-amber-50 text-amber-700' :
+                  'bg-slate-50 text-slate-700'
+                }`}>
+                  {appt.status}
+                </span>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider">
-                Confirmed
-              </span>
+            ))
+          ) : (
+            <div className="px-6 py-8 text-center text-slate-500 text-sm italic">
+              No recent appointments found
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

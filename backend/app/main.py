@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.db import base  # Import all models for SQLAlchemy registry
 from app.api.v1.api import api_router
 from app.core.config import settings
 from starlette.middleware.cors import CORSMiddleware

@@ -53,7 +53,28 @@ export interface ClinicalVisit {
     complaints: string;
     diagnosis?: string;
     notes?: string;
+    follow_up_date?: string;
     patient?: Patient;
+    treatment_records?: TreatmentRecord[];
+    specialized_diagnostics?: SpecializedDiagnostic[];
+    prescriptions?: Prescription[];
+}
+
+export interface TreatmentRecord {
+    id: number;
+    visit_id: number;
+    treatment_type: string;
+    notes?: string;
+    created_at: string;
+}
+
+export interface SpecializedDiagnostic {
+    id: number;
+    visit_id: number;
+    diagnostic_type: string;
+    findings?: string;
+    recommendations?: string;
+    created_at: string;
 }
 
 export interface Drug {
@@ -71,10 +92,14 @@ export interface Prescription {
     id: number;
     visit_id: number;
     drug_id: number;
+    patient_id: string;
     dosage: string;
     quantity: number;
     instructions?: string;
     drug?: Drug;
+    patient?: Patient;
+    is_dispensed: boolean;
+    created_at: string;
 }
 
 export type PaymentStatus = 'pending' | 'paid' | 'partial' | 'cancelled';
@@ -97,6 +122,7 @@ export interface Bill {
     status: PaymentStatus;
     created_at: string;
     visit?: ClinicalVisit;
+    patient?: Patient;
 }
 
 export interface AuthState {

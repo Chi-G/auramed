@@ -13,7 +13,7 @@ router = APIRouter()
 def read_patients(
     db: Session = Depends(deps.get_db),
     page: int = 1,
-    size: int = 10,
+    size: int = Query(default=10),
     q: Optional[str] = None,
     current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
@@ -57,9 +57,17 @@ def create_patient(
     """
     patient_data = patient_in.model_dump()
     if not patient_data.get("patient_id"):
-        # Generate a sequential patient ID: PAT + padded count + 1
-        count = db.query(PatientModel).count()
-        patient_data["patient_id"] = f"AURAMED{str(count + 1).zfill(3)}"
+        max_id = db.query(func.max(PatientModel.patient_id)).filter(PatientModel.patient_id.like("AURAMED%")).scalar()
+        if max_id:
+            try:
+                # Extract number from AURAMED001
+                num_part = max_id.replace("AURAMED", "")
+                next_num = int(num_part) + 1
+            except (ValueError, TypeError):
+                next_num = 1
+        else:
+            next_num = 1
+        patient_data["patient_id"] = f"AURAMED{str(next_num).zfill(3)}"
         
     patient = PatientModel(**patient_data)
     db.add(patient)

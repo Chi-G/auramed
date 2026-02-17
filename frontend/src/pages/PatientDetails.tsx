@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { 
   ArrowLeft, 
   Edit, 
@@ -17,12 +17,20 @@ import {
 import apiClient from '../services/api';
 import type { Patient } from '../types';
 import EditPatientModal from '../components/EditPatientModal';
+import RecordVisitModal from '../components/RecordVisitModal';
+import ConfirmModal from '../components/ConfirmModal';
+import toast from 'react-hot-toast';
+import type { ClinicalVisit, PaginatedResponse } from '../types';
 
 const PatientDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRecordVisitModalOpen, setIsRecordVisitModalOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
 
   const { data: patient, isLoading } = useQuery<Patient>({
     queryKey: ['patient', id],
@@ -33,12 +41,30 @@ const PatientDetails = () => {
     enabled: !!id,
   });
 
+  const { data: visitsData, isLoading: isLoadingVisits } = useQuery<PaginatedResponse<ClinicalVisit>>({
+    queryKey: ['visits', id, page],
+    queryFn: async () => {
+      const response = await apiClient.get(`/visits/?patient_id=${id}&page=${page}&size=${pageSize}`);
+      return response.data;
+    },
+    enabled: !!id,
+    placeholderData: keepPreviousData,
+  });
+
+  const visits = visitsData?.items || [];
+  const totalPages = visitsData ? Math.ceil(visitsData.total / pageSize) : 0;
+
+
   const deleteMutation = useMutation({
     mutationFn: () => apiClient.delete(`/patients/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Patient deleted successfully');
       navigate('/patients');
     },
+    onError: () => {
+      toast.error('Failed to delete patient');
+    }
   });
 
   if (isLoading) {
@@ -94,18 +120,14 @@ const PatientDetails = () => {
             <Edit size={18} />
             Edit
           </button>
-          <button 
-            onClick={() => {
-              if (window.confirm('Are you sure you want to delete this patient?')) {
-                deleteMutation.mutate();
-              }
-            }}
-            disabled={deleteMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 border border-rose-100 bg-white rounded-xl text-rose-600 font-bold hover:bg-rose-50 transition-all font-bold"
-          >
-            <Trash2 size={18} />
-            Delete
-          </button>
+           <button 
+             onClick={() => setIsDeleteModalOpen(true)}
+             disabled={deleteMutation.isPending}
+             className="flex items-center gap-2 px-4 py-2 border border-rose-100 bg-white rounded-xl text-rose-600 font-bold hover:bg-rose-50 transition-all"
+           >
+             <Trash2 size={18} />
+             Delete
+           </button>
         </div>
       </div>
 
@@ -178,32 +200,133 @@ const PatientDetails = () => {
         </div>
 
         {/* Timeline / Clinical Data Placeholder */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-full min-h-[500px]">
+        <div className="lg:col-span-2 space-y-6 mb-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 h-full min-h-[500px] flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
                 <Activity size={20} className="text-sky-600" />
                 <h3 className="text-lg font-bold text-slate-900">Clinical History</h3>
               </div>
-              <button className="flex items-center gap-2 text-sky-600 font-bold hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-all text-sm">
+              <button 
+                onClick={() => setIsRecordVisitModalOpen(true)}
+                className="flex items-center gap-2 text-sky-600 font-bold hover:bg-sky-50 px-3 py-1.5 rounded-lg transition-all text-sm"
+              >
                 <Plus size={18} />
                 Add Record
               </button>
             </div>
 
-            {/* Placeholder for visits */}
-            <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-              <div className="p-4 bg-slate-50 rounded-full text-slate-300">
-                <Clock size={40} />
+            {/* Visits Table */}
+            {isLoadingVisits ? (
+               <div className="flex items-center justify-center py-20">
+                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600"></div>
+               </div>
+            ) : visits.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                <div className="p-4 bg-slate-50 rounded-full text-slate-300">
+                  <Clock size={40} />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 text-lg">No visits recorded yet</p>
+                  <p className="text-slate-500 max-w-xs mx-auto">This patient hasn't had any recorded clinical visits or consultations yet.</p>
+                </div>
+                <button 
+                  onClick={() => setIsRecordVisitModalOpen(true)}
+                  className="px-6 py-2 bg-sky-600 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 hover:bg-sky-700 transition-all font-bold"
+                >
+                  Start New Consultation
+                </button>
               </div>
-              <div>
-                <p className="font-bold text-slate-900 text-lg">No visits recorded yet</p>
-                <p className="text-slate-500 max-w-xs mx-auto">This patient hasn't had any recorded clinical visits or consultations yet.</p>
+            ) : (
+              <div className="flex flex-col flex-1 gap-4">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                <th className="p-4">Date & Time</th>
+                                <th className="p-4">Diagnosis & Complaints</th>
+                                <th className="p-4">Vitals</th>
+                                <th className="p-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-sm text-slate-700 divide-y divide-slate-50">
+                            {visits.map((visit) => (
+                                <tr key={visit.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-4 align-top">
+                                        <div className="font-bold text-slate-900">
+                                            {new Date(visit.visit_date).toLocaleDateString()}
+                                        </div>
+                                        <div className="text-xs text-slate-400">
+                                            {new Date(visit.visit_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top max-w-xs">
+                                        {visit.diagnosis && (
+                                            <div className="mb-1 font-semibold text-sky-700">
+                                                {visit.diagnosis}
+                                            </div>
+                                        )}
+                                        <div className="text-slate-600 line-clamp-2">
+                                            {visit.complaints}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top">
+                                        <div className="space-y-1 text-xs">
+                                            {visit.bp_systolic && visit.bp_diastolic && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-400">BP:</span>
+                                                    <span>{visit.bp_systolic}/{visit.bp_diastolic}</span>
+                                                </div>
+                                            )}
+                                            {visit.weight_kg && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-400">Wt:</span>
+                                                    <span>{visit.weight_kg} kg</span>
+                                                </div>
+                                            )}
+                                            {visit.bmi && (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-400">BMI:</span>
+                                                    <span>{visit.bmi}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top">
+                                        <span className="px-2 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full">
+                                            Completed
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-auto mb-4">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="px-3 py-1 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-sm text-slate-500">
+                            Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{totalPages}</span>
+                        </span>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page === totalPages}
+                            className="px-3 py-1 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
+                )}
               </div>
-              <button className="px-6 py-2 bg-sky-600 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 hover:bg-sky-700 transition-all font-bold">
-                Start New Consultation
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -212,6 +335,23 @@ const PatientDetails = () => {
         isOpen={isEditModalOpen} 
         onClose={() => setIsEditModalOpen(false)} 
         patient={patient}
+      />
+
+      <RecordVisitModal
+        isOpen={isRecordVisitModalOpen}
+        onClose={() => setIsRecordVisitModalOpen(false)}
+        selectedPatientId={patient.id}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        title="Delete Patient Record"
+        message={`Are you sure you want to delete ${patient.first_name} ${patient.last_name}? All clinical data, visits, and prescriptions will be lost forever.`}
+        confirmLabel="Confirm Deletion"
+        isDanger={true}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

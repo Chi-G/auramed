@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { X, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import apiClient from '../services/api';
 import type { Patient } from '../types';
 
@@ -67,6 +68,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
       if (patient) {
         queryClient.invalidateQueries({ queryKey: ['patients', patient.id] });
       }
+      toast.success('Patient details updated successfully');
       onClose();
     },
   });

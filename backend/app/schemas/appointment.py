@@ -5,14 +5,14 @@ from app.models.appointment import AppointmentStatus
 from .patient import Patient
 
 class AppointmentBase(BaseModel):
-    patient_id: Optional[int] = None
+    patient_id: Optional[str] = None
     appointment_date: Optional[datetime] = None
     reason_for_visit: Optional[str] = None
     status: Optional[AppointmentStatus] = AppointmentStatus.PENDING
     notes: Optional[str] = None
 
 class AppointmentCreate(AppointmentBase):
-    patient_id: int
+    patient_id: str
     appointment_date: datetime
 
 class AppointmentUpdate(AppointmentBase):

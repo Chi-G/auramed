@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { X, Loader2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import apiClient from '../services/api';
 
 const patientSchema = z.object({
@@ -46,6 +47,7 @@ const RegisterPatientModal: React.FC<RegisterPatientModalProps> = ({ isOpen, onC
     mutationFn: (data: PatientFormData) => apiClient.post('/patients/', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Patient registered successfully');
       reset();
       onClose();
     },

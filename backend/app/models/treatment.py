@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import enum
 from app.db.base_class import Base
@@ -16,9 +16,9 @@ class TreatmentType(str, enum.Enum):
 
 class TreatmentRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
-    visit_id = Column(Integer, ForeignKey("clinicalvisit.id"), nullable=False)
+    visit_id = Column(Integer, ForeignKey("clinicalvisit.id", ondelete="CASCADE"), nullable=False)
     treatment_type = Column(Enum(TreatmentType), nullable=False)
     notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    visit = relationship("ClinicalVisit", backref="treatment_records")
+    visit = relationship("ClinicalVisit", backref=backref("treatment_records", cascade="all, delete-orphan"))

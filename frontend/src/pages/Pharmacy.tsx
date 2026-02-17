@@ -13,12 +13,19 @@ import {
   Filter,
   PackageCheck,
   TrendingDown,
-  ChevronDown
+  ChevronDown,
+  History,
+  Undo2,
+  AlertCircle,
+  Clock,
+  Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import apiClient from '../services/api';
-import type { Drug, PaginatedResponse } from '../types';
+import { toast } from 'react-hot-toast';
+import type { Drug, PaginatedResponse, Prescription } from '../types';
 import AddDrugModal from '../components/AddDrugModal';
+import DispenseDrugModal from '../components/DispenseDrugModal';
 import Pagination from '../components/Pagination';
 
 const CATEGORIES = [
@@ -37,7 +44,9 @@ const Pharmacy = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDispenseModalOpen, setIsDispenseModalOpen] = useState(false);
   const [drugToEdit, setDrugToEdit] = useState<Drug | null>(null);
+  const [drugToDispense, setDrugToDispense] = useState<Drug | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<PaginatedResponse<Drug>>({
@@ -74,8 +83,32 @@ const Pharmacy = () => {
     mutationFn: (id: number) => apiClient.delete(`/pharmacy/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drugs'] });
+      toast.success('Medication deleted successfully');
     },
   });
+
+  const { data: historyData } = useQuery<Prescription[]>({
+    queryKey: ['dispense-history'],
+    queryFn: async () => {
+      const response = await apiClient.get<Prescription[]>('/pharmacy/dispense');
+      return response.data;
+    }
+  });
+
+  const undoDispenseMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/pharmacy/dispense/${id}`),
+    onSuccess: () => {
+      toast.success('Dispense undone successfully');
+      queryClient.invalidateQueries({ queryKey: ['drugs'] });
+      queryClient.invalidateQueries({ queryKey: ['dispense-history'] });
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to undo dispense');
+    }
+  });
+
+  const recentDispenses = historyData || [];
 
   const handleEdit = (drug: Drug) => {
     setDrugToEdit(drug);
@@ -85,6 +118,16 @@ const Pharmacy = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setDrugToEdit(null);
+  };
+
+  const handleDispense = (drug: Drug) => {
+    setDrugToDispense(drug);
+    setIsDispenseModalOpen(true);
+  };
+
+  const handleCloseDispenseModal = () => {
+    setIsDispenseModalOpen(false);
+    setDrugToDispense(null);
   };
 
   return (
@@ -208,7 +251,7 @@ const Pharmacy = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                [...Array(5)].map((_, i) => (
+                [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded-lg"></div></td>
                     <td className="px-6 py-4"><div className="h-5 w-24 bg-slate-100 rounded-lg"></div></td>
@@ -266,6 +309,13 @@ const Pharmacy = () => {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button 
+                          onClick={() => handleDispense(drug)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all transition-all opacity-0 group-hover:opacity-100 mr-2"
+                        >
+                          <Pill size={14} />
+                          Dispense
+                        </button>
+                        <button 
                           onClick={() => handleEdit(drug)}
                           className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         >
@@ -273,9 +323,47 @@ const Pharmacy = () => {
                         </button>
                         <button 
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this medication?')) {
-                              deleteMutation.mutate(drug.id);
-                            }
+                            toast.custom((t) => (
+                              <div className={`${t.visible ? 'animate-in fade-in duration-300' : 'animate-out fade-out duration-300'} fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm`}>
+                                <div 
+                                  className={`${t.visible ? 'animate-in zoom-in-95 duration-300' : 'animate-out zoom-out-95 duration-300'} max-w-md w-full m-4 bg-white shadow-2xl rounded-2xl pointer-events-auto border border-slate-100 overflow-hidden relative z-[10000]`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="p-6">
+                                    <div className="flex items-start">
+                                      <div className="flex-shrink-0">
+                                        <div className="h-12 w-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
+                                          <AlertCircle size={28} />
+                                        </div>
+                                      </div>
+                                      <div className="ml-4 flex-1">
+                                        <p className="text-lg font-bold text-slate-900">Delete Medication?</p>
+                                        <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                                          Are you sure you want to delete this medication? This item will be permanently removed from inventory.
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="mt-6 flex justify-end gap-3">
+                                      <button
+                                        onClick={() => toast.dismiss(t.id)}
+                                        className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-all"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          deleteMutation.mutate(drug.id);
+                                          toast.dismiss(t.id);
+                                        }}
+                                        className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-rose-200"
+                                      >
+                                        Yes, Delete
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ), { duration: Infinity });
                           }}
                           className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         >
@@ -301,10 +389,115 @@ const Pharmacy = () => {
         </div>
       </div>
 
+      {/* Recent Activity */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-sky-100 text-sky-600 rounded-lg">
+              <History size={20} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Recent Dispensing</h2>
+              <p className="text-sm text-slate-500">Last 20 transactions appear here</p>
+            </div>
+          </div>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {recentDispenses.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              No recent dispensing activity.
+            </div>
+          ) : (
+            recentDispenses.map((item) => (
+              <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Pill size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-slate-900">{item.drug?.name || 'Unknown Medication'}</p>
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold uppercase">
+                        Qty: {item.quantity}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <p className="text-xs text-slate-500 flex items-center gap-1">
+                        <Clock size={12} />
+                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                      </p>
+                      <p className="text-xs text-slate-500 uppercase font-medium">
+                        Patient: {item.patient ? `${item.patient.first_name} ${item.patient.last_name}` : item.patient_id}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    toast.custom((t) => (
+                      <div className={`${t.visible ? 'animate-in fade-in duration-300' : 'animate-out fade-out duration-300'} fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm`}>
+                        <div 
+                          className={`${t.visible ? 'animate-in zoom-in-95 duration-300' : 'animate-out zoom-out-95 duration-300'} max-w-md w-full m-4 bg-white shadow-2xl rounded-2xl pointer-events-auto border border-slate-100 overflow-hidden relative z-[10000]`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="p-6">
+                            <div className="flex items-start">
+                              <div className="flex-shrink-0">
+                                <div className="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                  <History size={28} />
+                                </div>
+                              </div>
+                              <div className="ml-4 flex-1">
+                                <p className="text-lg font-bold text-slate-900">Undo Action?</p>
+                                <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                                  Are you sure you want to undo this dispensing? Stock and billing will be reverted.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-3">
+                              <button
+                                onClick={() => toast.dismiss(t.id)}
+                                className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-all"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => {
+                                  undoDispenseMutation.mutate(item.id);
+                                  toast.dismiss(t.id);
+                                }}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-amber-100"
+                              >
+                                Confirm Undo
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ), { duration: Infinity });
+                  }}
+                  disabled={undoDispenseMutation.isPending}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-all border border-transparent hover:border-rose-100 disabled:opacity-50"
+                >
+                  {undoDispenseMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Undo2 size={14} />}
+                  Undo
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       <AddDrugModal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         drugToEdit={drugToEdit}
+      />
+
+      <DispenseDrugModal
+        isOpen={isDispenseModalOpen}
+        onClose={handleCloseDispenseModal}
+        drug={drugToDispense}
       />
     </div>
   );

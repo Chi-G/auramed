@@ -11,7 +11,7 @@ class AppointmentStatus(str, enum.Enum):
 
 class Appointment(Base):
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String(36), ForeignKey("patient.id"), nullable=False)
+    patient_id = Column(String(36), ForeignKey("patient.id", ondelete="CASCADE"), nullable=False)
     appointment_date = Column(DateTime, nullable=False)
     reason_for_visit = Column(Text)
     status = Column(Enum(AppointmentStatus), default=AppointmentStatus.PENDING)

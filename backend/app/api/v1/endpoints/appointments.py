@@ -15,7 +15,7 @@ router = APIRouter()
 def read_appointments(
     db: Session = Depends(deps.get_db),
     page: int = 1,
-    size: int = 10,
+    size: int = Query(default=10),
     q: Optional[str] = None,
     status: Optional[AppointmentStatus] = None,
     start_date: Optional[date] = None,

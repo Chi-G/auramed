@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     EMAILS_FROM_EMAIL: Optional[str] = "info@auramed.com"
     EMAILS_FROM_NAME: Optional[str] = "AuraMed"
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 24
+    
+    # Paystack Settings
+    PAYSTACK_SECRET_KEY: Optional[str] = None
+    PAYSTACK_PUBLIC_KEY: Optional[str] = None
+    PAYSTACK_CALLBACK_URL: str = "http://127.0.0.1:8000/api/v1/billing/payment/callback"
+    PAYSTACK_WEBHOOK_URL: Optional[str] = None
 
     @property
     def EMAILS_ENABLED(self) -> bool:

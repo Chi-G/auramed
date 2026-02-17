@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { 
   Plus, 
   Search, 
@@ -7,18 +7,28 @@ import {
   Calendar, 
   User, 
   ChevronRight,
-  Filter
+  Filter,
+  Eye,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import apiClient from '../services/api';
 import type { ClinicalVisit, PaginatedResponse } from '../types';
 import RecordVisitModal from '../components/RecordVisitModal';
+import ViewVisitModal from '../components/ViewVisitModal';
+import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
+import toast from 'react-hot-toast';
 
 const Visits = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewingVisit, setViewingVisit] = useState<ClinicalVisit | undefined>(undefined);
+  const [editingVisit, setEditingVisit] = useState<ClinicalVisit | undefined>(undefined);
+  const [deletingVisitId, setDeletingVisitId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery<PaginatedResponse<ClinicalVisit>>({
     queryKey: ['visits', page, searchTerm],
@@ -30,6 +40,31 @@ const Visits = () => {
     },
     placeholderData: keepPreviousData,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/visits/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      toast.success('Clinical record deleted successfully');
+      setDeletingVisitId(null);
+    },
+    onError: () => {
+      toast.error('Failed to delete clinical record');
+    }
+  });
+
+  const handleView = (visit: ClinicalVisit) => {
+    setViewingVisit(visit);
+  };
+
+  const handleEdit = (visit: ClinicalVisit) => {
+    setEditingVisit(visit);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingVisitId(id);
+  };
 
   const visits = data?.items || [];
   const total = data?.total || 0;
@@ -94,7 +129,7 @@ const Visits = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                [...Array(3)].map((_, i) => (
+                [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded-lg"></div></td>
                     <td className="px-6 py-4"><div className="h-5 w-24 bg-slate-100 rounded-lg"></div></td>
@@ -150,9 +185,29 @@ const Visits = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all">
-                      <ChevronRight size={20} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleView(visit)}
+                        className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all"
+                        title="View Details"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleEdit(visit)}
+                        className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all"
+                        title="Edit Record"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(visit.id)}
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Delete Record"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -170,7 +225,30 @@ const Visits = () => {
 
       <RecordVisitModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => {
+            setIsModalOpen(false);
+            setEditingVisit(undefined);
+        }}
+        visit={editingVisit}
+      />
+
+      <ViewVisitModal
+        isOpen={!!viewingVisit}
+        onClose={() => setViewingVisit(undefined)}
+        visit={viewingVisit}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingVisitId}
+        onClose={() => setDeletingVisitId(null)}
+        onConfirm={() => {
+            if (deletingVisitId) deleteMutation.mutate(deletingVisitId);
+        }}
+        title="Delete Clinical Record"
+        message="Are you sure you want to delete this clinical record? This action cannot be undone."
+        confirmLabel="Delete Record"
+        isDanger={true}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

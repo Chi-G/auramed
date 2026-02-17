@@ -5,7 +5,7 @@ from app.db.base_class import Base
 
 class ClinicalVisit(Base):
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(String(36), ForeignKey("patient.id"), nullable=False)
+    patient_id = Column(String(36), ForeignKey("patient.id", ondelete="CASCADE"), nullable=False)
     doctor_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     visit_date = Column(DateTime(timezone=True), server_default=func.now())
     

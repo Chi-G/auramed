@@ -6,17 +6,21 @@ import {
   Calendar as CalendarIcon, 
   Clock, 
   User, 
-  MoreVertical,
+
   CheckCircle2,
   XCircle,
   AlertCircle,
-  Filter
+  Filter,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 import apiClient from '../services/api';
 import type { Appointment, AppointmentStatus, PaginatedResponse } from '../types';
 import ScheduleAppointmentModal from '../components/ScheduleAppointmentModal';
+import ConfirmModal from '../components/ConfirmModal';
 import Pagination from '../components/Pagination';
+import toast from 'react-hot-toast';
 
 const statusStyles: Record<AppointmentStatus, string> = {
   pending: 'bg-amber-100 text-amber-700 border-amber-200',
@@ -38,6 +42,8 @@ const Appointments = () => {
   const [currentWeekOnly, setCurrentWeekOnly] = useState(false);
   const [filterStatus, setFilterStatus] = useState<AppointmentStatus | ''>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | undefined>(undefined);
+  const [deletingAppointmentId, setDeletingAppointmentId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   const startDate = currentWeekOnly ? format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd') : undefined; // weekStartsOn: 1 (Monday)
@@ -70,8 +76,33 @@ const Appointments = () => {
       apiClient.put(`/appointments/${id}`, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success('Status updated');
     },
+    onError: () => {
+        toast.error('Failed to update status');
+    }
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/appointments/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success('Appointment cancelled successfully');
+      setDeletingAppointmentId(null);
+    },
+    onError: () => {
+      toast.error('Failed to cancel appointment');
+    }
+  });
+
+  const handleEdit = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingAppointmentId(id);
+  };
 
   return (
     <div className="space-y-8">
@@ -150,7 +181,7 @@ const Appointments = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                [...Array(3)].map((_, i) => (
+                [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4"><div className="h-10 w-40 bg-slate-100 rounded-lg"></div></td>
                     <td className="px-6 py-4"><div className="h-5 w-32 bg-slate-100 rounded-lg"></div></td>
@@ -213,10 +244,22 @@ const Appointments = () => {
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                       </select>
-                      <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
-                        <MoreVertical size={20} />
-                      </button>
-                    </div>
+
+                         <button 
+                            onClick={() => handleEdit(apt)}
+                            className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all"
+                            title="Edit Appointment"
+                         >
+                           <Edit size={18} />
+                         </button>
+                         <button 
+                            onClick={() => handleDelete(apt.id)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                            title="Cancel Appointment"
+                         >
+                           <Trash2 size={18} />
+                         </button>
+                       </div>
                   </td>
                 </tr>
               ))}
@@ -234,7 +277,24 @@ const Appointments = () => {
 
       <ScheduleAppointmentModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => {
+            setIsModalOpen(false);
+            setEditingAppointment(undefined);
+        }}
+        appointment={editingAppointment}
+      />
+
+      <ConfirmModal
+        isOpen={!!deletingAppointmentId}
+        onClose={() => setDeletingAppointmentId(null)}
+        onConfirm={() => {
+            if (deletingAppointmentId) deleteMutation.mutate(deletingAppointmentId);
+        }}
+        title="Cancel Appointment"
+        message="Are you sure you want to cancel this appointment? This action cannot be undone."
+        confirmLabel="Yes, Cancel Appointment"
+        isDanger={true}
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

@@ -1,0 +1,9 @@
+DEBUG: create_visit called
+DEBUG: visit_in treatments: [TreatmentRecordCreate(treatment_type='Aromatherapy', notes='Adipisicing fugit v')]
+DEBUG: visit_in diagnostics: [SpecializedDiagnosticCreate(diagnostic_type='Iridology Diagnosis', findings='Lorem sit dolor recu', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Qrmba', findings='Lorem sit dolor recu', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Reflexology Diagnosis', findings='Lorem sit dolor recu', recommendations='')]
+DEBUG: create_visit called
+DEBUG: visit_in treatments: [TreatmentRecordCreate(treatment_type='Manual Therapy', notes='Esse ut eveniet ut ')]
+DEBUG: visit_in diagnostics: [SpecializedDiagnosticCreate(diagnostic_type='Qrmba', findings='Et sunt esse offic', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Reflexology Diagnosis', findings='Et sunt esse offic', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Laboratory Test', findings='Et sunt esse offic', recommendations='')]
+DEBUG: create_visit called
+DEBUG: visit_in treatments: [TreatmentRecordCreate(treatment_type='Manual Therapy', notes='Ut facere qui qui au')]
+DEBUG: visit_in diagnostics: [SpecializedDiagnosticCreate(diagnostic_type='Iridology Diagnosis', findings='Amet impedit quae ', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Manual Diagnosis', findings='Amet impedit quae ', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Laboratory Test', findings='Amet impedit quae ', recommendations='')]

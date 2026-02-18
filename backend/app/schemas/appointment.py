@@ -8,7 +8,7 @@ class AppointmentBase(BaseModel):
     patient_id: Optional[str] = None
     appointment_date: Optional[datetime] = None
     reason_for_visit: Optional[str] = None
-    status: Optional[AppointmentStatus] = AppointmentStatus.PENDING
+    status: Optional[AppointmentStatus] = AppointmentStatus.SCHEDULED
     notes: Optional[str] = None
 
 class AppointmentCreate(AppointmentBase):

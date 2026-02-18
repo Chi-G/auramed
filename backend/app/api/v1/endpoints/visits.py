@@ -7,8 +7,8 @@ from sqlalchemy import or_, and_, func
 from app.api import deps
 from app.models.patient import Patient as PatientModel
 from app.models.visit import ClinicalVisit as ClinicalVisitModel
-from app.models.treatment import TreatmentRecord as TreatmentModel
-from app.models.diagnostic import SpecializedDiagnostic as DiagnosticModel
+from app.models.treatment import TreatmentRecord, TreatmentType
+from app.models.diagnostic import SpecializedDiagnostic, DiagnosticType
 from app.models.bill import Bill as BillModel, PaymentStatus
 from app.models.clinic_settings import ClinicSettings as ClinicSettingsModel
 from app.schemas.visit import ClinicalVisit, VisitCreate, VisitUpdate, ClinicalVisitPage
@@ -55,6 +55,11 @@ def read_visits(
     if end_date:
         # Include the entire end date
         query = query.filter(func.date(ClinicalVisitModel.visit_date) <= end_date)
+
+    # Filter by assigned doctor if user is a doctor
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR:
+        query = query.filter(PatientModel.assigned_doctor_id == current_user.id)
 
     total = query.count()
     visits = query.order_by(ClinicalVisitModel.visit_date.desc()).offset(skip).limit(size).all()
@@ -142,9 +147,15 @@ def read_visit(
     """
     Get clinical visit by ID.
     """
-    visit = db.query(ClinicalVisitModel).filter(ClinicalVisitModel.id == id).first()
+    visit = db.query(ClinicalVisitModel).join(PatientModel).filter(ClinicalVisitModel.id == id).first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and visit.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
+        
     return visit
 
 @router.put("/{id}", response_model=ClinicalVisit)
@@ -158,9 +169,14 @@ def update_visit(
     """
     Update a clinical visit.
     """
-    visit = db.query(ClinicalVisitModel).filter(ClinicalVisitModel.id == id).first()
+    visit = db.query(ClinicalVisitModel).join(PatientModel).filter(ClinicalVisitModel.id == id).first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and visit.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     # Update flat fields
     # print statements are more reliable for capturing output in some environments
@@ -215,9 +231,22 @@ def delete_visit(
     """
     Delete a clinical visit.
     """
-    visit = db.query(ClinicalVisitModel).filter(ClinicalVisitModel.id == id).first()
+    visit = db.query(ClinicalVisitModel).join(PatientModel).filter(ClinicalVisitModel.id == id).first()
     if not visit:
         raise HTTPException(status_code=404, detail="Visit not found")
+    
+    # Check permissions
+    from app.models.role_permission import RolePermission
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_delete_perm = any(p.permission_key == 'delete_visit' and p.is_enabled for p in user_perms)
+    
+    if not current_user.is_superuser and not has_delete_perm:
+        raise HTTPException(status_code=403, detail="Not enough privileges to delete visits")
+
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and visit.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     visit_schema = ClinicalVisit.model_validate(visit)
     db.delete(visit)

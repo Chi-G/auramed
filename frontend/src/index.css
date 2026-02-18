@@ -5,11 +5,22 @@
     --primary: #0ea5e9;
     --secondary: #64748b;
     --background: #f8fafc;
+    --card: #ffffff;
     --foreground: #0f172a;
+    --border: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  .dark {
+    --background: #0f172a;
+    --card: #1e293b;
+    --foreground: #f8fafc;
+    --border: #334155;
+    --muted: #94a3b8;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300;
     font-family: 'Inter', sans-serif;
   }
 }

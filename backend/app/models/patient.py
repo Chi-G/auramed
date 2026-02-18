@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, Integer, String, Date, Text, DateTime
+from sqlalchemy import Column, Integer, String, Date, Text, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base_class import Base
 
@@ -15,6 +16,9 @@ class Patient(Base):
     email = Column(String(255), index=True)
     address = Column(Text)
     medical_history = Column(Text, nullable=True)
+    
+    assigned_doctor_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    assigned_doctor = relationship("User", foreign_keys=[assigned_doctor_id])
     
     # Next of Kin
     next_of_kin_name = Column(String(255), nullable=True)

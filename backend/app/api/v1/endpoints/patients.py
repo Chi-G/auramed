@@ -2,6 +2,8 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, func
+import random
+from app.models.user import User as UserModel, UserRole
 
 from app.api import deps
 from app.models.patient import Patient as PatientModel
@@ -34,6 +36,10 @@ def read_patients(
                 PatientModel.phone_number.ilike(search)
             )
         )
+    
+    # Filter by assigned doctor if user is a doctor
+    if current_user.role == UserRole.DOCTOR:
+        query = query.filter(PatientModel.assigned_doctor_id == current_user.id)
     
     total = query.count()
     patients = query.offset(skip).limit(size).all()
@@ -69,6 +75,16 @@ def create_patient(
             next_num = 1
         patient_data["patient_id"] = f"AURAMED{str(next_num).zfill(3)}"
         
+    # Automatic random doctor assignment if not provided
+    if not patient_data.get("assigned_doctor_id"):
+        doctors = db.query(UserModel).filter(
+            UserModel.role == UserRole.DOCTOR,
+            UserModel.is_active == True
+        ).all()
+        if doctors:
+            random_doctor = random.choice(doctors)
+            patient_data["assigned_doctor_id"] = random_doctor.id
+            
     patient = PatientModel(**patient_data)
     db.add(patient)
     db.commit()
@@ -88,6 +104,11 @@ def read_patient(
     patient = db.query(PatientModel).filter(PatientModel.id == id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Check if doctor is assigned to this patient
+    if current_user.role == UserRole.DOCTOR and patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
+        
     return patient
 
 @router.put("/{id}", response_model=Patient)
@@ -104,6 +125,10 @@ def update_patient(
     patient = db.query(PatientModel).filter(PatientModel.id == id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Check if doctor is assigned to this patient
+    if current_user.role == UserRole.DOCTOR and patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     update_data = patient_in.model_dump(exclude_unset=True)
     for field in update_data:
@@ -127,6 +152,18 @@ def delete_patient(
     patient = db.query(PatientModel).filter(PatientModel.id == id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+    
+    # Check permissions
+    from app.models.role_permission import RolePermission
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_delete_perm = any(p.permission_key == 'delete_patient' and p.is_enabled for p in user_perms)
+    
+    if not current_user.is_superuser and not has_delete_perm:
+        raise HTTPException(status_code=403, detail="Not enough privileges to delete patients")
+
+    # Check if doctor is assigned to this patient
+    if current_user.role == UserRole.DOCTOR and patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     db.delete(patient)
     db.commit()

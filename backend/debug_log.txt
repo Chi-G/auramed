@@ -7,3 +7,6 @@ DEBUG: visit_in diagnostics: [SpecializedDiagnosticCreate(diagnostic_type='Qrmba
 DEBUG: create_visit called
 DEBUG: visit_in treatments: [TreatmentRecordCreate(treatment_type='Manual Therapy', notes='Ut facere qui qui au')]
 DEBUG: visit_in diagnostics: [SpecializedDiagnosticCreate(diagnostic_type='Iridology Diagnosis', findings='Amet impedit quae ', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Manual Diagnosis', findings='Amet impedit quae ', recommendations=''), SpecializedDiagnosticCreate(diagnostic_type='Laboratory Test', findings='Amet impedit quae ', recommendations='')]
+DEBUG: create_visit called
+DEBUG: visit_in treatments: []
+DEBUG: visit_in diagnostics: []

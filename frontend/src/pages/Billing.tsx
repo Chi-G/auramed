@@ -13,7 +13,8 @@ import {
   Printer,
   Mail,
   Trash2,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
@@ -21,6 +22,7 @@ import autoTable from 'jspdf-autotable';
 import apiClient from '../services/api';
 import type { Bill, PaginatedResponse, Patient } from '../types';
 import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ConfirmModal';
 
 const Billing = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +31,7 @@ const Billing = () => {
   const [isFeeModalOpen, setIsFeeModalOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [patientSearch, setPatientSearch] = useState('');
+  const [deletingBillId, setDeletingBillId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
   // const { user } = useAuth();
@@ -106,7 +109,7 @@ const Billing = () => {
         <button 
             onClick={() => initializeMutation.mutate()}
             disabled={initializeMutation.isPending}
-            className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+            className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50"
         >
             {initializeMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
             Pay Now
@@ -149,9 +152,11 @@ const Billing = () => {
     onSuccess: () => {
       toast.success('Bill deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['bills'] });
+      setDeletingBillId(null);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Failed to delete bill');
+      setDeletingBillId(null);
     }
   });
 
@@ -244,57 +249,57 @@ const Billing = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Billing & Payments</h1>
-          <p className="text-slate-500">Track patient invoices and record payments</p>
+          <h1 className="text-3xl font-black text-[var(--foreground)] tracking-tight">Billing & Payments</h1>
+          <p className="text-[var(--muted)] font-medium tracking-tight">Track patient invoices and record payments</p>
         </div>
         <button 
           onClick={() => setIsFeeModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold transition-all shadow-sm"
+          className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white rounded-xl font-black transition-all shadow-lg shadow-sky-500/25 dark:shadow-sky-500/10 uppercase tracking-widest text-xs"
         >
-          <Receipt size={20} />
+          <Receipt size={18} />
           Add Consultation Fee
         </button>
       </div>
 
       {/* Stats - Page Local */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+        <div className="bg-[var(--card)] p-6 rounded-2xl border border-[var(--border)] shadow-sm flex items-center gap-4 transition-all duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
             <Clock size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Pending (Page)</p>
-            <p className="text-2xl font-bold text-slate-900">₦{totalPending.toFixed(2)}</p>
+            <p className="text-xs font-black text-[var(--muted)] uppercase tracking-widest">Pending (Page)</p>
+            <p className="text-3xl font-black text-[var(--foreground)]">₦{totalPending.toFixed(2)}</p>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <div className="bg-[var(--card)] p-6 rounded-2xl border border-[var(--border)] shadow-sm flex items-center gap-4 transition-all duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Items (Page)</p>
-            <p className="text-2xl font-bold text-slate-900">{bills.length}</p>
+            <p className="text-xs font-black text-[var(--muted)] uppercase tracking-widest">Items (Page)</p>
+            <p className="text-3xl font-black text-[var(--foreground)]">{bills.length}</p>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+        <div className="bg-[var(--card)] p-6 rounded-2xl border border-[var(--border)] shadow-sm flex items-center gap-4 transition-all duration-300">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
             <Receipt size={24} />
           </div>
           <div>
-            <p className="text-sm text-slate-500 font-medium">Total Invoices</p>
-            <p className="text-2xl font-bold text-slate-900">{total}</p>
+            <p className="text-xs font-black text-[var(--muted)] uppercase tracking-widest">Total Invoices</p>
+            <p className="text-3xl font-black text-[var(--foreground)]">{total}</p>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
+      <div className="bg-[var(--card)] p-4 rounded-2xl shadow-sm border border-[var(--border)] flex flex-col md:flex-row gap-4 transition-all duration-300">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={20} />
           <input
             type="text"
             placeholder="Search by patient name or invoice ID..."
@@ -303,7 +308,7 @@ const Billing = () => {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-[var(--input)] border border-[var(--border)] text-[var(--foreground)] rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
           />
         </div>
         <select 
@@ -312,7 +317,7 @@ const Billing = () => {
             setFilterStatus(e.target.value);
             setPage(1);
           }}
-          className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 bg-white focus:ring-2 focus:ring-sky-500/20 outline-none font-semibold"
+          className="px-4 py-2.5 border border-[var(--border)] rounded-xl text-[var(--foreground)] bg-[var(--input)] transition-all focus:ring-2 focus:ring-sky-500/20 outline-none font-black text-xs uppercase tracking-widest"
         >
           <option value="all">All Status</option>
           <option value="paid">Paid</option>
@@ -322,47 +327,47 @@ const Billing = () => {
       </div>
 
       {/* Invoices Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-[var(--card)] rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden transition-all duration-300">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Invoice / Patient</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Balance</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider sr-only">Actions</th>
+              <tr className="bg-[var(--background)]/50 border-b border-[var(--border)]">
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Invoice / Patient</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Date</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Amount</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Balance</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-widest text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border)]">
               {isLoading ? (
                 [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4"><div className="h-10 w-48 bg-slate-100 rounded-lg"></div></td>
-                    <td className="px-6 py-4"><div className="h-5 w-24 bg-slate-100 rounded-lg"></div></td>
-                    <td className="px-6 py-4"><div className="h-5 w-20 bg-slate-100 rounded-lg"></div></td>
-                    <td className="px-6 py-4"><div className="h-5 w-20 bg-slate-100 rounded-lg"></div></td>
-                    <td className="px-6 py-4"><div className="h-6 w-16 bg-slate-100 rounded-lg"></div></td>
+                    <td className="px-6 py-4"><div className="h-10 w-48 bg-[var(--background)]/50 rounded-lg"></div></td>
+                    <td className="px-6 py-4"><div className="h-5 w-24 bg-[var(--background)]/50 rounded-lg"></div></td>
+                    <td className="px-6 py-4"><div className="h-5 w-20 bg-[var(--background)]/50 rounded-lg"></div></td>
+                    <td className="px-6 py-4"><div className="h-5 w-20 bg-[var(--background)]/50 rounded-lg"></div></td>
+                    <td className="px-6 py-4"><div className="h-6 w-16 bg-[var(--background)]/50 rounded-lg"></div></td>
                     <td className="px-6 py-4"></td>
                   </tr>
                 ))
               ) : bills.length === 0 ? (
                 <tr>
-                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
+                   <td colSpan={6} className="px-6 py-12 text-center text-[var(--muted)] text-sm italic font-medium opacity-60">
                     No invoices found.
                   </td>
                 </tr>
               ) : bills.map((bill) => (
-                <tr key={bill.id} className="hover:bg-slate-50/80 transition-colors group">
+                <tr key={bill.id} className="hover:bg-[var(--background)]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-xl bg-[var(--background)]/50 text-[var(--muted)] flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Receipt size={20} />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-sky-600 uppercase">#{bill.id.toString().padStart(6, '0')}</p>
-                        <p className="font-bold text-slate-900">
+                        <p className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest">#{bill.id.toString().padStart(6, '0')}</p>
+                        <p className="font-bold text-[var(--foreground)]">
                           {bill.patient ? `${bill.patient.first_name} ${bill.patient.last_name}` : 
                            bill.visit?.patient ? `${bill.visit.patient.first_name} ${bill.visit.patient.last_name}` : 
                            'Unknown Patient'}
@@ -370,22 +375,22 @@ const Billing = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">
+                  <td className="px-6 py-4 text-xs font-bold text-[var(--foreground)] uppercase tracking-tight">
                     {bill.created_at ? format(new Date(bill.created_at), 'MMM d, yyyy') : 'N/A'}
                   </td>
-                  <td className="px-6 py-4 font-bold text-slate-900">
+                  <td className="px-6 py-4 font-black text-[var(--foreground)]">
                     ₦{bill.total_amount?.toFixed(2) || '0.00'}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`font-bold ${(bill.balance || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  <td className="px-6 py-4 tracking-tight">
+                    <span className={`font-black ${(bill.balance || 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                       ₦{bill.balance?.toFixed(2) || '0.00'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                      bill.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                      bill.status === 'partial' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                      'bg-rose-50 text-rose-700 border-rose-100'
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[10px] font-black border tracking-widest ${
+                      bill.status === 'paid' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100/50 dark:border-emerald-500/20' :
+                      bill.status === 'partial' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100/50 dark:border-amber-500/20' :
+                      'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-100/50 dark:border-rose-500/20'
                     }`}>
                       {bill.status === 'paid' ? <CheckCircle2 size={12} /> : 
                        bill.status === 'partial' ? <Clock size={12} /> : <AlertCircle size={12} />}
@@ -399,78 +404,36 @@ const Billing = () => {
                       )}
                       <button 
                         onClick={() => handleDownloadPDF(bill)}
-                        className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-all"
+                        className="p-2 text-[var(--muted)] hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-lg transition-all"
                         title="Download Invoice PDF"
                       >
                         <Download size={18} />
                       </button>
                       <div className="relative group/menu">
-                        <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
+                        <button className="p-2 text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)]/50 rounded-lg transition-all">
                           <MoreVertical size={20} />
                         </button>
-                        <div className="invisible group-hover/menu:visible absolute right-0 top-0 mt-8 w-36 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 transition-all opacity-0 group-hover/menu:opacity-100">
+                        <div className="invisible group-hover/menu:visible absolute right-0 top-0 mt-10 w-44 bg-[var(--card)] rounded-xl shadow-2xl border border-[var(--border)] py-2 z-50 transition-all opacity-0 group-hover/menu:opacity-100 animate-in fade-in zoom-in-95 duration-200">
                           <button 
                             onClick={() => handlePrint(bill)}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-600 transition-colors"
+                            className="w-full text-left px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-[var(--background)]/50 flex items-center gap-2 text-[var(--foreground)] transition-colors"
                           >
-                             <Printer size={16} className="text-sky-600" /> Print
+                             <Printer size={16} className="text-sky-600 dark:text-sky-400" /> Print
                           </button>
                           <button 
                             onClick={() => sendEmailMutation.mutate(bill.id)}
                             disabled={sendEmailMutation.isPending}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2 text-slate-600 transition-colors disabled:opacity-50"
+                            className="w-full text-left px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-[var(--background)]/50 flex items-center gap-2 text-[var(--foreground)] transition-colors disabled:opacity-50"
                           >
-                             {sendEmailMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} className="text-sky-600" />} Email
+                             {sendEmailMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} className="text-sky-600 dark:text-sky-400" />} Email
                           </button>
-                          <button 
-                            onClick={() => {
-                              toast.custom((t) => (
-                                <div className={`${t.visible ? 'animate-in fade-in duration-300' : 'animate-out fade-out duration-300'} fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm`}>
-                                  <div 
-                                    className={`${t.visible ? 'animate-in zoom-in-95 duration-300' : 'animate-out zoom-out-95 duration-300'} max-w-md w-full m-4 bg-white shadow-2xl rounded-2xl pointer-events-auto border border-slate-100 overflow-hidden relative z-[10000]`}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="p-6">
-                                      <div className="flex items-start">
-                                        <div className="flex-shrink-0">
-                                          <div className="h-12 w-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
-                                            <AlertCircle size={28} />
-                                          </div>
-                                        </div>
-                                        <div className="ml-4 flex-1">
-                                          <p className="text-lg font-bold text-slate-900">Delete Bill Record?</p>
-                                          <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                                            Are you sure you want to delete this bill record? This action is permanent and cannot be undone.
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="mt-6 flex justify-end gap-3">
-                                        <button
-                                          onClick={() => toast.dismiss(t.id)}
-                                          className="px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-all"
-                                        >
-                                          No, Keep It
-                                        </button>
-                                        <button
-                                          onClick={() => {
-                                            deleteBillMutation.mutate(bill.id);
-                                            toast.dismiss(t.id);
-                                          }}
-                                          className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-rose-200"
-                                        >
-                                          Yes, Delete Record
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ), { duration: Infinity });
-                            }}
-                            disabled={deleteBillMutation.isPending}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-rose-50 flex items-center gap-2 text-rose-600 transition-colors disabled:opacity-50 border-t border-slate-50"
-                          >
-                             {deleteBillMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Delete
-                          </button>
+                           <button 
+                             onClick={() => setDeletingBillId(bill.id)}
+                             disabled={deleteBillMutation.isPending}
+                             className="w-full text-left px-4 py-2 text-xs font-black uppercase tracking-widest hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center gap-2 text-rose-600 dark:text-rose-400 transition-colors disabled:opacity-50 border-t border-[var(--border)] pt-3 mt-1"
+                           >
+                              {deleteBillMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} Delete
+                           </button>
                         </div>
                       </div>
                     </div>
@@ -491,27 +454,27 @@ const Billing = () => {
 
       {/* Manual Fee Modal */}
       {isFeeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm shadow-2xl">
-          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h2 className="text-xl font-bold text-slate-900">Add Consultation Fee</h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm shadow-2xl">
+          <div className="bg-[var(--card)] rounded-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-[var(--border)]">
+            <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-[var(--background)]/50">
+              <h2 className="text-xl font-black text-[var(--foreground)] tracking-tight">Add Consultation Fee</h2>
               <button 
                 onClick={() => {
                   setIsFeeModalOpen(false);
                   setPatientSearch('');
                   setSelectedPatientId('');
                 }} 
-                className="p-2 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200"
+                className="p-2 hover:bg-[var(--background)]/50 rounded-xl transition-all"
               >
-                <Loader2 size={24} className="text-slate-400" />
+                <X size={20} className="text-[var(--muted)]" />
               </button>
             </div>
             
             <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Search Patient</label>
+                <label className="block text-xs font-black text-[var(--foreground)] mb-2 uppercase tracking-widest">Search Patient</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" size={18} />
                   <input
                     type="text"
                     placeholder="Search by name or ID..."
@@ -520,7 +483,7 @@ const Billing = () => {
                       setPatientSearch(e.target.value);
                       if (selectedPatientId) setSelectedPatientId('');
                     }}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-[var(--input)] border border-[var(--border)] text-[var(--foreground)] rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                   />
                   {selectedPatientId && (
                     <button 
@@ -528,7 +491,7 @@ const Billing = () => {
                         setSelectedPatientId('');
                         setPatientSearch('');
                       }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-sky-600 hover:text-sky-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-sky-600 hover:text-sky-700 dark:text-sky-400 dark:hover:text-sky-300"
                     >
                       Clear
                     </button>
@@ -536,7 +499,7 @@ const Billing = () => {
                 </div>
                 
                 {patients.length > 0 && !selectedPatientId && (
-                  <div className="mt-2 border border-slate-100 rounded-xl overflow-hidden shadow-lg bg-white absolute z-10 w-[calc(100%-3rem)] max-h-60 overflow-y-auto">
+                  <div className="mt-2 border border-[var(--border)] rounded-xl overflow-hidden shadow-2xl bg-[var(--card)] absolute z-10 w-[calc(100%-3rem)] max-h-60 overflow-y-auto animate-in slide-in-from-top-2 duration-200">
                     {patients.map(p => (
                       <button
                         key={p.id}
@@ -544,38 +507,38 @@ const Billing = () => {
                           setSelectedPatientId(p.id);
                           setPatientSearch(`${p.first_name} ${p.last_name}`);
                         }}
-                        className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center justify-between group"
+                        className="w-full text-left px-4 py-3 hover:bg-[var(--background)]/50 transition-colors flex items-center justify-between group"
                       >
                         <div>
-                          <p className="font-bold text-slate-900 group-hover:text-sky-600 transition-colors">{p.first_name} {p.last_name}</p>
-                          <p className="text-xs text-slate-500 uppercase">{p.patient_id}</p>
+                          <p className="font-bold text-[var(--foreground)] group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{p.first_name} {p.last_name}</p>
+                          <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mt-0.5">{p.patient_id}</p>
                         </div>
-                        <CheckCircle2 size={16} className="text-slate-200 group-hover:text-sky-400 transition-colors" />
+                        <CheckCircle2 size={16} className="text-[var(--background)] group-hover:text-sky-400 transition-colors" />
                       </button>
                     ))}
                   </div>
                 )}
               </div>
               
-              <div className="bg-sky-50 p-4 rounded-xl border border-sky-100">
-                <p className="text-sm text-sky-800 flex items-center gap-2">
-                  <AlertCircle size={16} />
+              <div className="bg-sky-50 dark:bg-sky-500/10 p-4 rounded-xl border border-sky-100/50 dark:border-sky-500/20">
+                <p className="text-xs text-sky-800 dark:text-sky-400 font-medium flex items-start gap-3 leading-relaxed">
+                  <AlertCircle size={18} className="shrink-0" />
                   This will add the clinic's standard consultation fee to the patient's current unpaid bill or create a new one.
                 </p>
               </div>
             </div>
 
-            <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex gap-3">
+            <div className="p-6 bg-[var(--background)]/50 border-t border-[var(--border)] flex gap-3">
               <button
                 onClick={() => setIsFeeModalOpen(false)}
-                className="flex-1 px-4 py-2.5 bg-white text-slate-600 font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
+                className="flex-1 px-5 py-3 bg-[var(--card)] text-[var(--foreground)] font-black text-xs uppercase tracking-widest rounded-xl border border-[var(--border)] hover:bg-[var(--background)]/50 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={() => addFeeMutation.mutate(selectedPatientId)}
                 disabled={!selectedPatientId || addFeeMutation.isPending}
-                className="flex-1 px-4 py-2.5 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-5 py-3 bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-sky-500/25 dark:shadow-sky-500/10 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {addFeeMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : 'Apply Fee'}
               </button>
@@ -583,6 +546,16 @@ const Billing = () => {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={!!deletingBillId}
+        onClose={() => setDeletingBillId(null)}
+        onConfirm={() => deletingBillId && deleteBillMutation.mutate(deletingBillId)}
+        title="Delete Bill Record"
+        message="Are you sure you want to delete this bill record? This action is permanent and cannot be undone."
+        confirmLabel="Delete Record"
+        isDanger={true}
+        isLoading={deleteBillMutation.isPending}
+      />
     </div>
   );
 };

@@ -13,7 +13,7 @@ const appointmentSchema = z.object({
   patient_id: z.string().min(1, 'Patient selection is required'),
   appointment_date: z.string().min(1, 'Date and time are required'),
   reason_for_visit: z.string().min(3, 'Reason is required'),
-  status: z.enum(['pending', 'confirmed', 'cancelled', 'completed']),
+  status: z.enum(['scheduled', 'confirmed', 'arrived', 'in_consultation', 'completed', 'cancelled', 'no_show']),
   notes: z.string().optional(),
 });
 
@@ -21,7 +21,7 @@ type AppointmentFormData = {
   patient_id: string;
   appointment_date: string;
   reason_for_visit: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'scheduled' | 'confirmed' | 'arrived' | 'in_consultation' | 'completed' | 'cancelled' | 'no_show';
   notes?: string;
 };
 
@@ -44,7 +44,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
   } = useForm<AppointmentFormData>({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
-      status: 'pending',
+      status: 'scheduled',
     }
   });
 
@@ -59,7 +59,7 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
         setValue('notes', appointment.notes || '');
       } else {
         reset({
-          status: 'pending',
+          status: 'scheduled',
           patient_id: '',
           appointment_date: '',
           reason_for_visit: '',
@@ -158,10 +158,13 @@ const ScheduleAppointmentModal: React.FC<ScheduleAppointmentModalProps> = ({ isO
                 {...register('status')}
                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white"
               >
-                <option value="pending">Pending</option>
+                <option value="scheduled">Scheduled</option>
                 <option value="confirmed">Confirmed</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="arrived">Arrived</option>
+                <option value="in_consultation">In-Consultation</option>
                 <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="no_show">No-Show</option>
               </select>
             </div>
 

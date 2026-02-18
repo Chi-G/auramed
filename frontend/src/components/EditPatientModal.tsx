@@ -33,6 +33,7 @@ interface EditPatientModalProps {
 
 const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, patient }) => {
   const queryClient = useQueryClient();
+
   const {
     register,
     handleSubmit,
@@ -65,9 +66,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
     mutationFn: (data: PatientFormData) => apiClient.put(`/patients/${patient?.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
-      if (patient) {
-        queryClient.invalidateQueries({ queryKey: ['patients', patient.id] });
-      }
+      if (patient) queryClient.invalidateQueries({ queryKey: ['patients', patient.id] });
+
       toast.success('Patient details updated successfully');
       onClose();
     },
@@ -76,146 +76,268 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
   if (!isOpen || !patient) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h2 className="text-xl font-bold text-slate-900">Edit Patient: {patient.patient_id}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <X size={20} className="text-slate-500" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 dark:border-slate-800">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+            Edit Patient: {patient.patient_id}
+          </h2>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <X size={20} className="text-slate-600 dark:text-slate-300" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="overflow-y-auto p-6 space-y-6">
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit((data) => mutation.mutate(data))}
+          className="overflow-y-auto p-6 space-y-6"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* First Name */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">First Name *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                First Name *
+              </label>
               <input
                 {...register('first_name')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20 
+                  outline-none transition-all"
               />
-              {errors.first_name && <p className="mt-1 text-xs text-rose-500">{errors.first_name.message}</p>}
+              {errors.first_name && (
+                <p className="mt-1 text-xs text-rose-500">{errors.first_name.message}</p>
+              )}
             </div>
 
+            {/* Last Name */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Last Name *
+              </label>
               <input
                 {...register('last_name')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20 
+                  outline-none transition-all"
               />
-              {errors.last_name && <p className="mt-1 text-xs text-rose-500">{errors.last_name.message}</p>}
+              {errors.last_name && (
+                <p className="mt-1 text-xs text-rose-500">{errors.last_name.message}</p>
+              )}
             </div>
 
+            {/* Middle Name */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Middle Name</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Middle Name
+              </label>
               <input
                 {...register('middle_name')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
             </div>
 
+            {/* Date of Birth */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Date of Birth *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Date of Birth *
+              </label>
               <input
-                {...register('date_of_birth')}
                 type="date"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                {...register('date_of_birth')}
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
-              {errors.date_of_birth && <p className="mt-1 text-xs text-rose-500">{errors.date_of_birth.message}</p>}
+              {errors.date_of_birth && (
+                <p className="mt-1 text-xs text-rose-500">{errors.date_of_birth.message}</p>
+              )}
             </div>
 
+            {/* Gender */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Gender *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Gender *
+              </label>
               <select
                 {...register('gender')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white"
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-white dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="Male" className="dark:text-slate-900">Male</option>
+                <option value="Female" className="dark:text-slate-900">Female</option>
+                <option value="Other" className="dark:text-slate-900">Other</option>
               </select>
             </div>
 
+            {/* Phone Number */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Phone Number
+              </label>
               <input
                 {...register('phone_number')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
             </div>
 
+            {/* Email */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Email Address
+              </label>
               <input
-                {...register('email')}
                 type="email"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                {...register('email')}
+                className="w-full px-4 py-2 rounded-lg 
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
-              {errors.email && <p className="mt-1 text-xs text-rose-500">{errors.email.message}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs text-rose-500">{errors.email.message}</p>
+              )}
             </div>
 
+            {/* Address */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Home Address</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Home Address
+              </label>
               <textarea
-                {...register('address')}
                 rows={2}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all resize-none"
+                {...register('address')}
+                className="w-full px-4 py-2 rounded-lg resize-none
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
             </div>
 
+            {/* Medical History */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Medical History Summary</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Medical History Summary
+              </label>
               <textarea
-                {...register('medical_history')}
                 rows={3}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all resize-none"
+                {...register('medical_history')}
+                className="w-full px-4 py-2 rounded-lg resize-none
+                  bg-slate-50 dark:bg-slate-800
+                  border border-slate-300 dark:border-slate-700
+                  text-slate-900 dark:text-slate-100
+                  focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
               />
             </div>
 
-            {/* Next of Kin Section */}
-            <div className="md:col-span-2 pt-4 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 mb-4">Next of Kin Information</h3>
+            {/* Next of Kin */}
+            <div className="md:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4">
+                Next of Kin Information
+              </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* NOK Name */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Full Name
+                  </label>
                   <input
                     {...register('next_of_kin_name')}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                    className="w-full px-4 py-2 rounded-lg 
+                      bg-slate-50 dark:bg-slate-800
+                      border border-slate-300 dark:border-slate-700
+                      text-slate-900 dark:text-slate-100
+                      focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
                   />
                 </div>
+
+                {/* NOK Relation */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Relationship</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Relationship
+                  </label>
                   <input
                     {...register('next_of_kin_relation')}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                    className="w-full px-4 py-2 rounded-lg 
+                      bg-slate-50 dark:bg-slate-800
+                      border border-slate-300 dark:border-slate-700
+                      text-slate-900 dark:text-slate-100
+                      focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
                   />
                 </div>
+
+                {/* NOK Phone */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Phone Number</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Phone Number
+                  </label>
                   <input
                     {...register('next_of_kin_phone')}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                    className="w-full px-4 py-2 rounded-lg 
+                      bg-slate-50 dark:bg-slate-800
+                      border border-slate-300 dark:border-slate-700
+                      text-slate-900 dark:text-slate-100
+                      focus:ring-2 focus:ring-sky-500/30 dark:focus:ring-sky-400/20"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+          {/* Footer Buttons */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+              className="px-6 py-2 text-sm font-bold 
+                text-slate-600 dark:text-slate-300
+                hover:bg-slate-100 dark:hover:bg-slate-800 
+                rounded-lg transition-all"
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="px-8 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-sky-500/25 flex items-center gap-2"
+              className="px-8 py-2 rounded-lg 
+                bg-sky-600 hover:bg-sky-700 
+                text-white text-sm font-bold 
+                transition-all shadow-lg shadow-sky-500/25 
+                flex items-center gap-2 disabled:opacity-70"
             >
               {mutation.isPending ? <Loader2 size={18} className="animate-spin" /> : 'Save Changes'}
             </button>
           </div>
+
         </form>
       </div>
     </div>

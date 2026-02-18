@@ -18,7 +18,7 @@ class Bill(Base):
     total_amount = Column(Float, nullable=False)
     amount_paid = Column(Float, default=0.0)
     balance = Column(Float, default=0.0)
-    status = Column(Enum(PaymentStatus), default=PaymentStatus.UNPAID)
+    status = Column(Enum(PaymentStatus, values_callable=lambda x: [e.value for e in x]), default=PaymentStatus.UNPAID)
     payment_date = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr
+from app.schemas.user import User
 from datetime import date, datetime
 
 # Shared properties
@@ -17,6 +18,7 @@ class PatientBase(BaseModel):
     next_of_kin_name: Optional[str] = None
     next_of_kin_relation: Optional[str] = None
     next_of_kin_phone: Optional[str] = None
+    assigned_doctor_id: Optional[int] = None
 
 # Properties to receive on creation
 class PatientCreate(PatientBase):
@@ -40,7 +42,7 @@ class PatientInDBBase(PatientBase):
 # Additional properties to return via API
 # Additional properties to return via API
 class Patient(PatientInDBBase):
-    pass
+    assigned_doctor: Optional[User] = None
 
 class PatientPage(BaseModel):
     items: list[Patient]

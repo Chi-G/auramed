@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'super_admin';
+export type UserRole = 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'super_admin' | 'cashier';
 
 export interface User {
     id: number;
@@ -24,10 +24,12 @@ export interface Patient {
     next_of_kin_name?: string;
     next_of_kin_relation?: string;
     next_of_kin_phone?: string;
+    assigned_doctor_id?: number;
+    assigned_doctor?: User;
     created_at: string;
 }
 
-export type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type AppointmentStatus = 'scheduled' | 'confirmed' | 'arrived' | 'in_consultation' | 'completed' | 'cancelled' | 'no_show';
 
 export interface Appointment {
     id: number;

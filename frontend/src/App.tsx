@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -10,12 +11,14 @@ import Patients from './pages/Patients';
 import PatientDetails from './pages/PatientDetails';
 import Appointments from './pages/Appointments';
 
+import Staff from './pages/Staff';
 import Dashboard from './pages/Dashboard';
 import Visits from './pages/Visits';
 import Pharmacy from './pages/Pharmacy';
 import Billing from './pages/Billing';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import AccessDeniedModal from './components/AccessDeniedModal';
 
 const queryClient = new QueryClient();
 
@@ -47,10 +50,43 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <Layout>{children}</Layout>;
 };
 
+const PermissionRoute = ({ children, permission }: { children: React.ReactNode, permission: string }) => {
+  const { user, permissions, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  // Hard constraint: Only super_admin and admin can access management paths
+  const isManagementPath = permission === 'manage_roles';
+  const hasAuthorizedRole = user && (user.role === 'super_admin' || user.role === 'admin');
+
+  if (!permissions[permission] || (isManagementPath && !hasAuthorizedRole)) {
+    return <AccessDeniedModal />;
+  }
+
+  return <>{children}</>;
+};
+
+const Home = () => {
+  const { permissions, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  if (permissions.view_dashboard) {
+    return <Dashboard />;
+  }
+
+  if (permissions.manage_patients) {
+    return <Navigate to="/patients" replace />;
+  }
+
+  return <Navigate to="/settings" replace />;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
         <Toaster position="top-right" toastOptions={{
           duration: 4000,
           style: {
@@ -71,7 +107,7 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <Home />
                 </ProtectedRoute>
               }
             />
@@ -79,7 +115,9 @@ function App() {
               path="/patients"
               element={
                 <ProtectedRoute>
-                  <Patients />
+                  <PermissionRoute permission="manage_patients">
+                    <Patients />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -87,7 +125,9 @@ function App() {
               path="/patients/:id"
               element={
                 <ProtectedRoute>
-                  <PatientDetails />
+                  <PermissionRoute permission="manage_patients">
+                    <PatientDetails />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -95,7 +135,9 @@ function App() {
               path="/appointments"
               element={
                 <ProtectedRoute>
-                  <Appointments />
+                  <PermissionRoute permission="manage_appointments">
+                    <Appointments />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -103,7 +145,9 @@ function App() {
               path="/visits"
               element={
                 <ProtectedRoute>
-                  <Visits />
+                  <PermissionRoute permission="manage_clinical_visits">
+                    <Visits />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -111,7 +155,9 @@ function App() {
               path="/pharmacy"
               element={
                 <ProtectedRoute>
-                  <Pharmacy />
+                  <PermissionRoute permission="manage_pharmacy">
+                    <Pharmacy />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -119,7 +165,9 @@ function App() {
               path="/billing"
               element={
                 <ProtectedRoute>
-                  <Billing />
+                  <PermissionRoute permission="manage_billing">
+                    <Billing />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -127,7 +175,9 @@ function App() {
               path="/reports"
               element={
                 <ProtectedRoute>
-                  <Reports />
+                  <PermissionRoute permission="view_reports">
+                    <Reports />
+                  </PermissionRoute>
                 </ProtectedRoute>
               }
             />
@@ -139,9 +189,20 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/staff"
+              element={
+                <ProtectedRoute>
+                  <PermissionRoute permission="manage_roles">
+                    <Staff />
+                  </PermissionRoute>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

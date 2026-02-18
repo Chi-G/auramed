@@ -10,31 +10,53 @@ from app.models.visit import ClinicalVisit as VisitModel
 from app.models.drug import Drug as DrugModel
 from app.models.patient import Patient as PatientModel
 from app.models.appointment import Appointment as AppointmentModel
+from app.models.user import UserRole
+from app.models.role_permission import RolePermission
 
 router = APIRouter()
 
 @router.get("/summary")
 def get_clinic_summary(
-    db: Session = Depends(deps.get_db),
     current_user: Any = Depends(deps.get_current_active_user),
+    db: Session = Depends(deps.get_db),
 ) -> Any:
     """
     Get a high-level summary for the dashboard.
     """
-    total_revenue = db.query(func.sum(BillModel.total_amount)).scalar() or 0
-    pending_revenue = db.query(func.sum(BillModel.balance)).scalar() or 0
+    # Permission check - only allow users with view_reports to see summary/trends
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
     
-    # Today's visits only
+    if not current_user.is_superuser and not has_view_reports:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Not enough privileges to view reports summary")
+
     today = date.today()
-    visit_count = db.query(func.count(VisitModel.id)).filter(
-        func.date(VisitModel.visit_date) == today
-    ).scalar()
     
-    total_patients = db.query(func.count(PatientModel.id)).scalar()
-    total_appointments = db.query(func.count(AppointmentModel.id)).scalar()
+    # Queries with role-based filtering
+    revenue_q = db.query(func.sum(BillModel.total_amount))
+    pending_revenue_q = db.query(func.sum(BillModel.balance))
+    visit_count_q = db.query(func.count(VisitModel.id)).filter(func.date(VisitModel.visit_date) == today)
+    total_patients_q = db.query(func.count(PatientModel.id))
+    total_appointments_q = db.query(func.count(AppointmentModel.id))
+    recent_appointments_q = db.query(AppointmentModel).join(PatientModel)
+    
+    if current_user.role == UserRole.DOCTOR:
+        revenue_q = revenue_q.join(VisitModel).filter(VisitModel.doctor_id == current_user.id)
+        pending_revenue_q = pending_revenue_q.join(VisitModel).filter(VisitModel.doctor_id == current_user.id)
+        visit_count_q = visit_count_q.filter(VisitModel.doctor_id == current_user.id)
+        total_patients_q = total_patients_q.filter(PatientModel.assigned_doctor_id == current_user.id)
+        total_appointments_q = total_appointments_q.join(PatientModel).filter(PatientModel.assigned_doctor_id == current_user.id)
+        recent_appointments_q = recent_appointments_q.filter(PatientModel.assigned_doctor_id == current_user.id)
+    
+    total_revenue = revenue_q.scalar() or 0
+    pending_revenue = pending_revenue_q.scalar() or 0
+    visit_count = visit_count_q.scalar()
+    total_patients = total_patients_q.scalar()
+    total_appointments = total_appointments_q.scalar()
     
     # Recent appointments
-    recent_appointments_db = db.query(AppointmentModel).join(PatientModel).order_by(
+    recent_appointments_db = recent_appointments_q.order_by(
         AppointmentModel.appointment_date.desc()
     ).limit(5).all()
     
@@ -65,28 +87,41 @@ def get_clinic_summary(
 
 @router.get("/trends")
 def get_activity_trends(
-    db: Session = Depends(deps.get_db),
     current_user: Any = Depends(deps.get_current_active_user),
+    db: Session = Depends(deps.get_db),
 ) -> Any:
     """
     Get visit and revenue trends for the last 7 days.
     """
+    # Permission check
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
+    
+    if not current_user.is_superuser and not has_view_reports:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Not enough privileges to view reports trends")
     seven_days_ago = datetime.now() - timedelta(days=7)
     
     # Revenue trend
-    revenue_trend = db.query(
+    revenue_q = db.query(
         func.date(BillModel.created_at).label('date'),
         func.sum(BillModel.amount_paid).label('revenue')
-    ).filter(BillModel.created_at >= seven_days_ago)\
-     .group_by(func.date(BillModel.created_at))\
-     .order_by(func.date(BillModel.created_at)).all()
+    ).filter(BillModel.created_at >= seven_days_ago)
 
     # Visit trend
-    visit_trend = db.query(
+    visit_q = db.query(
         func.date(VisitModel.visit_date).label('date'),
         func.count(VisitModel.id).label('visits')
-    ).filter(VisitModel.visit_date >= seven_days_ago)\
-     .group_by(func.date(VisitModel.visit_date))\
+    ).filter(VisitModel.visit_date >= seven_days_ago)
+    
+    if current_user.role == UserRole.DOCTOR:
+        revenue_q = revenue_q.join(VisitModel).filter(VisitModel.doctor_id == current_user.id)
+        visit_q = visit_q.filter(VisitModel.doctor_id == current_user.id)
+        
+    revenue_trend = revenue_q.group_by(func.date(BillModel.created_at))\
+     .order_by(func.date(BillModel.created_at)).all()
+
+    visit_trend = visit_q.group_by(func.date(VisitModel.visit_date))\
      .order_by(func.date(VisitModel.visit_date)).all()
 
     return {

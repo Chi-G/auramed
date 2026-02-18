@@ -3,6 +3,10 @@ from app.models.user import User, UserRole
 from app.core.security import get_password_hash
 
 def init_db():
+    from app.db.session import engine
+    from app.db.base import Base
+    Base.metadata.create_all(bind=engine)
+    
     db = SessionLocal()
     # Check if admin already exists
     admin = db.query(User).filter(User.email == "admin@auramed.com").first()
@@ -55,6 +59,65 @@ def init_db():
             print(f"{role} user created: {email} / {password}")
         else:
             print(f"{role} user already exists.")
+
+    # Seed Default Permissions
+    from app.models.role_permission import RolePermission
+    
+    permissions_matrix = {
+        UserRole.SUPER_ADMIN: {
+            "view_dashboard": True, "manage_doctors": True, "manage_appointments": True, 
+            "manage_patients": True, "manage_clinical_visits": True, "manage_pharmacy": True, 
+            "manage_billing": True, "manage_settings": True, "manage_roles": True, "view_reports": True,
+            "delete_patient": True, "delete_appointment": True, "delete_visit": True
+        },
+        UserRole.ADMIN: {
+            "view_dashboard": True, "manage_doctors": True, "manage_appointments": True, 
+            "manage_patients": True, "manage_clinical_visits": True, "manage_pharmacy": True, 
+            "manage_billing": True, "manage_settings": True, "manage_roles": True, "view_reports": True,
+            "delete_patient": True, "delete_appointment": True, "delete_visit": True
+        },
+        UserRole.DOCTOR: {
+            "view_dashboard": True, "manage_doctors": False, "manage_appointments": True, 
+            "manage_patients": True, "manage_clinical_visits": True, "manage_pharmacy": True, 
+            "manage_billing": False, "manage_settings": False, "manage_roles": False, "view_reports": True,
+            "delete_patient": False, "delete_appointment": False, "delete_visit": False
+        },
+        UserRole.NURSE: {
+            "view_dashboard": True, "manage_doctors": False, "manage_appointments": True, 
+            "manage_patients": True, "manage_clinical_visits": True, "manage_pharmacy": False, 
+            "manage_billing": False, "manage_settings": False, "manage_roles": False, "view_reports": True,
+            "delete_patient": False, "delete_appointment": False, "delete_visit": False
+        },
+        UserRole.RECEPTIONIST: {
+            "view_dashboard": False, "manage_doctors": False, "manage_appointments": True, 
+            "manage_patients": True, "manage_clinical_visits": True, "manage_pharmacy": False, 
+            "manage_billing": True, "manage_settings": False, "manage_roles": False, "view_reports": False,
+            "delete_patient": False, "delete_appointment": False, "delete_visit": False
+        },
+        UserRole.CASHIER: {
+            "view_dashboard": False, "manage_doctors": False, "manage_appointments": False,
+            "manage_patients": True, "manage_clinical_visits": False, "manage_pharmacy": True,
+            "manage_billing": True, "manage_settings": False, "manage_roles": False, "view_reports": False,
+            "delete_patient": False, "delete_appointment": False, "delete_visit": False
+        }
+    }
+
+    # Seed for all UserRole or existing in permissions_matrix
+    for role in UserRole:
+        perms = permissions_matrix.get(role, {k: False for k in ["view_dashboard", "manage_doctors", "manage_appointments", "manage_patients", "manage_clinical_visits", "manage_pharmacy", "manage_billing", "manage_settings", "manage_roles", "view_reports", "delete_patient", "delete_appointment", "delete_visit"]})
+        for key, enabled in perms.items():
+            exists = db.query(RolePermission).filter(
+                RolePermission.role == role,
+                RolePermission.permission_key == key
+            ).first()
+            if not exists:
+                new_perm = RolePermission(role=role, permission_key=key, is_enabled=enabled)
+                db.add(new_perm)
+            else:
+                exists.is_enabled = enabled
+    
+    db.commit()
+    print("Default permissions seeded successfully.")
 
 if __name__ == "__main__":
     init_db()

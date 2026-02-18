@@ -10,13 +10,22 @@ import type { Drug } from '../types';
 import toast from 'react-hot-toast';
 
 const drugSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  name: z.string().min(2, 'Medication name is required'),
   description: z.string().optional(),
-  category: z.string().optional(),
-  unit_price: z.coerce.number().min(0, 'Price must be positive'),
-  stock_quantity: z.coerce.number().min(0, 'Stock must be 0 or more'),
-  low_stock_threshold: z.coerce.number().min(0, 'Threshold must be 0 or more'),
-  expiry_date: z.string().optional().or(z.literal('')),
+  category: z.string().min(1, 'Category is required'),
+  unit_price: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().positive('Price must be greater than 0')
+  ),
+  stock_quantity: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(0, 'Stock cannot be negative')
+  ),
+  low_stock_threshold: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(0, 'Threshold cannot be negative')
+  ),
+  expiry_date: z.string().min(1, 'Expiry date is required'),
 });
 
 interface AddDrugModalProps {
@@ -80,35 +89,35 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
       reset();
       onClose();
     },
-    onError: () => {
-      toast.error(drugToEdit ? 'Failed to update medication' : 'Failed to add medication');
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || (drugToEdit ? 'Failed to update medication' : 'Failed to add medication'));
     }
   });
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-[var(--card)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col border border-[var(--border)] animate-in fade-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-2">
-            <Pill className="text-sky-600" size={20} />
-            <h2 className="text-xl font-bold text-slate-900">
+            <Pill className="text-sky-600 dark:text-sky-400" size={20} />
+            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
               {drugToEdit ? 'Edit Medication' : 'Add New Medication'}
             </h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <X size={20} className="text-slate-500" />
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+            <X size={20} className="text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="overflow-y-auto p-6 space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Medication Name *</label>
+              <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Medication Name *</label>
               <input
                 {...register('name')}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                 placeholder="e.g., Amoxicillin 500mg"
               />
               {errors.name?.message && (
@@ -118,10 +127,10 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Category</label>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Category</label>
                 <select
                   {...register('category')}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all bg-white"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                 >
                   <option value="">Select Category</option>
                   {(categories || []).map((cat: {id: number, name: string}) => (
@@ -131,69 +140,91 @@ const AddDrugModal: React.FC<AddDrugModalProps> = ({ isOpen, onClose, drugToEdit
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
+                {errors.category?.message && (
+                  <p className="mt-1 text-xs text-rose-500">{String(errors.category.message)}</p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Unit Price ($) *</label>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Unit Price ($) *</label>
                 <input
                   {...register('unit_price')}
                   type="number"
                   step="0.01"
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  min="0.01"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                 />
+                {errors.unit_price?.message && (
+                  <p className="mt-1 text-xs text-rose-500">{String(errors.unit_price.message)}</p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Stock Quantity *</label>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Stock Quantity *</label>
                 <input
                   {...register('stock_quantity')}
                   type="number"
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  min="0"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                 />
+                {errors.stock_quantity?.message && (
+                  <p className="mt-1 text-xs text-rose-500">{String(errors.stock_quantity.message)}</p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Low Stock Alert *</label>
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Low Stock Alert *</label>
                 <input
                   {...register('low_stock_threshold')}
                   type="number"
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                  min="0"
+                  required
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
                 />
+                {errors.low_stock_threshold?.message && (
+                  <p className="mt-1 text-xs text-rose-500">{String(errors.low_stock_threshold.message)}</p>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Expiry Date</label>
+              <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Expiry Date</label>
               <input
                 {...register('expiry_date')}
                 type="date"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
+                required
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all"
               />
+              {errors.expiry_date?.message && (
+                <p className="mt-1 text-xs text-rose-500">{String(errors.expiry_date.message)}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+              <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-widest">Description</label>
               <textarea
                 {...register('description')}
                 rows={3}
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all resize-none"
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all resize-none"
                 placeholder="Dosage info, storage instructions..."
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+          <div className="flex justify-end gap-3 pt-6 border-t border-[var(--border)] bg-slate-50/50 dark:bg-slate-800/50 p-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+              className="px-6 py-2.5 text-xs font-black text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all uppercase tracking-widest"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="px-8 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-sky-500/25 flex items-center gap-2"
+              className="px-8 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-black rounded-xl transition-all shadow-lg shadow-sky-500/25 flex items-center gap-2 uppercase tracking-widest"
             >
               {mutation.isPending ? <Loader2 size={18} className="animate-spin" /> : (drugToEdit ? 'Update' : 'Add Medication')}
             </button>

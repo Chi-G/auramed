@@ -55,6 +55,11 @@ def read_bills(
     if status:
         query = query.filter(BillModel.status == status)
 
+    # Filter by assigned doctor if user is a doctor
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR:
+        query = query.filter(Patient.assigned_doctor_id == current_user.id)
+
     total = query.count()
     bills = query.order_by(BillModel.created_at.desc()).offset(skip).limit(size).all()
     
@@ -91,9 +96,15 @@ def read_bill(
     """
     Get bill by ID.
     """
-    bill = db.query(BillModel).filter(BillModel.id == id).first()
+    bill = db.query(BillModel).outerjoin(Patient).filter(BillModel.id == id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and bill.patient and bill.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
+        
     return bill
 
 @router.put("/{id}", response_model=Bill)
@@ -107,9 +118,14 @@ def update_bill(
     """
     Update a bill (e.g., record payment).
     """
-    bill = db.query(BillModel).filter(BillModel.id == id).first()
+    bill = db.query(BillModel).outerjoin(Patient).filter(BillModel.id == id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and bill.patient and bill.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     update_data = bill_in.model_dump(exclude_unset=True)
     
@@ -140,9 +156,14 @@ def delete_bill(
     """
     Delete a bill.
     """
-    bill = db.query(BillModel).filter(BillModel.id == id).first()
+    bill = db.query(BillModel).outerjoin(Patient).filter(BillModel.id == id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and bill.patient and bill.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     db.delete(bill)
     db.commit()

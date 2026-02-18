@@ -21,25 +21,22 @@ const Pagination = ({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
-      <div className="text-sm text-slate-500">
-        Showing <span className="font-bold text-slate-700">{startItem}</span> to{' '}
-        <span className="font-bold text-slate-700">{endItem}</span> of{' '}
-        <span className="font-bold text-slate-700">{totalItems}</span> results
+    <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--border)] bg-[var(--background)]/50">
+      <div className="text-sm text-[var(--muted)] font-medium">
+        Showing <span className="font-bold text-[var(--foreground)]">{startItem}</span> to{' '}
+        <span className="font-bold text-[var(--foreground)]">{endItem}</span> of{' '}
+        <span className="font-bold text-[var(--foreground)]">{totalItems}</span> results
       </div>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)]/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <ChevronLeft size={16} />
         </button>
         <div className="flex items-center gap-1">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            // Simple logic to show pages around current page could be added here
-            // For now just showing first 5 or logic can be improved.
-            // Let's implement a smarter logic:
             let pageNum = i + 1;
             if (totalPages > 5) {
                 if (currentPage > 3) {
@@ -58,10 +55,10 @@ const Pagination = ({
              <button
               key={page}
               onClick={() => onPageChange(page)}
-              className={`w-8 h-8 rounded-lg text-sm font-bold transition-colors ${
+              className={`w-8 h-8 rounded-lg text-sm font-bold transition-all active:scale-95 ${
                 currentPage === page
-                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/25'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/25 dark:shadow-sky-500/10'
+                  : 'bg-[var(--card)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)]/80'
               }`}
             >
               {page}
@@ -71,7 +68,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[var(--border)] bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--background)]/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <ChevronRight size={16} />
         </button>

@@ -6,6 +6,7 @@ import type { User, AuthState } from '../types';
 interface AuthContextType extends AuthState {
   login: (token: string) => Promise<void>;
   logout: () => void;
+  permissions: Record<string, boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +17,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isAuthenticated: false,
     isLoading: true,
   });
+  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
 
   const fetchUser = async () => {
     // Force a minimum 2-second wait to show the premium loading screen
@@ -23,7 +25,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     try {
       const response = await apiClient.get<User>('/users/me');
+      const permsResponse = await apiClient.get<Record<string, boolean>>('/permissions/my');
+      
+      const userPerms = permsResponse.data || {};
+      
       await minWait;
+      setPermissions(userPerms);
       setState({ user: response.data, isAuthenticated: true, isLoading: false });
     } catch (error) {
       await minWait;
@@ -55,7 +62,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, logout, permissions }}>
       {children}
     </AuthContext.Provider>
   );

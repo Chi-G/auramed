@@ -152,68 +152,18 @@ def create_drug(
     """
     Add new drug to pharmacy.
     """
+    # Check for existing drug with same name
+    existing_drug = db.query(DrugModel).filter(DrugModel.name == drug_in.name).first()
+    if existing_drug:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"A medication with the name '{drug_in.name}' already exists in inventory."
+        )
+    
     drug = DrugModel(**drug_in.model_dump())
     db.add(drug)
     db.commit()
     db.refresh(drug)
-    db.refresh(drug)
-    return drug
-
-@router.get("/{id}", response_model=Drug)
-def read_drug(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    current_user: Any = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Get drug by ID.
-    """
-    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
-    if not drug:
-        raise HTTPException(status_code=404, detail="Drug not found")
-    return drug
-
-@router.put("/{id}", response_model=Drug)
-def update_drug(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    drug_in: DrugUpdate,
-    current_user: Any = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Update a drug.
-    """
-    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
-    if not drug:
-        raise HTTPException(status_code=404, detail="Drug not found")
-    
-    update_data = drug_in.model_dump(exclude_unset=True)
-    for field in update_data:
-        setattr(drug, field, update_data[field])
-    
-    db.add(drug)
-    db.commit()
-    db.refresh(drug)
-    return drug
-
-@router.delete("/{id}", response_model=Drug)
-def delete_drug(
-    *,
-    db: Session = Depends(deps.get_db),
-    id: int,
-    current_user: Any = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Delete a drug.
-    """
-    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
-    if not drug:
-        raise HTTPException(status_code=404, detail="Drug not found")
-    
-    db.delete(drug)
-    db.commit()
     return drug
 
 @router.get("/categories", response_model=List[DrugCategorySchema])
@@ -279,6 +229,77 @@ def delete_category(
     db.delete(category)
     db.commit()
     return {"msg": "Category deleted successfully"}
+
+@router.get("/{id}", response_model=Drug)
+def read_drug(
+    *,
+    db: Session = Depends(deps.get_db),
+    id: int,
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get drug by ID.
+    """
+    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
+    if not drug:
+        raise HTTPException(status_code=404, detail="Drug not found")
+    return drug
+
+@router.put("/{id}", response_model=Drug)
+def update_drug(
+    *,
+    db: Session = Depends(deps.get_db),
+    id: int,
+    drug_in: DrugUpdate,
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Update a drug.
+    """
+    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
+    if not drug:
+        raise HTTPException(status_code=404, detail="Drug not found")
+    
+    update_data = drug_in.model_dump(exclude_unset=True)
+    
+    # Check for name uniqueness if name is being updated
+    if "name" in update_data and update_data["name"] != drug.name:
+        existing_drug = db.query(DrugModel).filter(
+            DrugModel.name == update_data["name"],
+            DrugModel.id != id
+        ).first()
+        if existing_drug:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"A medication with the name '{update_data['name']}' already exists in inventory."
+            )
+
+    for field in update_data:
+        setattr(drug, field, update_data[field])
+    
+    db.add(drug)
+    db.commit()
+    db.refresh(drug)
+    return drug
+
+@router.delete("/{id}", response_model=Drug)
+def delete_drug(
+    *,
+    db: Session = Depends(deps.get_db),
+    id: int,
+    current_user: Any = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Delete a drug.
+    """
+    drug = db.query(DrugModel).filter(DrugModel.id == id).first()
+    if not drug:
+        raise HTTPException(status_code=404, detail="Drug not found")
+    
+    db.delete(drug)
+    db.commit()
+    return drug
+
 
 @router.delete("/dispense/{id}", response_model=dict)
 def cancel_dispense(

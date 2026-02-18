@@ -51,6 +51,11 @@ def read_appointments(
         # Simply using date comparison usually works if mapped to DateTime, but let's be safe
         query = query.filter(func.date(AppointmentModel.appointment_date) <= end_date)
 
+    # Filter by assigned doctor if user is a doctor
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR:
+        query = query.filter(Patient.assigned_doctor_id == current_user.id)
+
     total = query.count()
     appointments = query.order_by(AppointmentModel.appointment_date.desc()).offset(skip).limit(size).all()
     
@@ -87,9 +92,15 @@ def read_appointment(
     """
     Get appointment by ID.
     """
-    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == id).first()
+    appointment = db.query(AppointmentModel).join(Patient).filter(AppointmentModel.id == id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and appointment.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
+        
     return appointment
 
 @router.put("/{id}", response_model=Appointment)
@@ -103,9 +114,14 @@ def update_appointment(
     """
     Update an appointment.
     """
-    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == id).first()
+    appointment = db.query(AppointmentModel).join(Patient).filter(AppointmentModel.id == id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and appointment.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     update_data = appointment_in.model_dump(exclude_unset=True)
     for field in update_data:
@@ -126,9 +142,22 @@ def delete_appointment(
     """
     Delete an appointment.
     """
-    appointment = db.query(AppointmentModel).filter(AppointmentModel.id == id).first()
+    appointment = db.query(AppointmentModel).join(Patient).filter(AppointmentModel.id == id).first()
     if not appointment:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    
+    # Check permissions
+    from app.models.role_permission import RolePermission
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_delete_perm = any(p.permission_key == 'delete_appointment' and p.is_enabled for p in user_perms)
+    
+    if not current_user.is_superuser and not has_delete_perm:
+        raise HTTPException(status_code=403, detail="Not enough privileges to delete appointments")
+
+    # Check if doctor is assigned to this patient
+    from app.models.user import UserRole
+    if current_user.role == UserRole.DOCTOR and appointment.patient.assigned_doctor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied: You are not assigned to this patient")
     
     db.delete(appointment)
     db.commit()

@@ -16,11 +16,15 @@ import {
   TrendingUp,
   Settings as SettingsIcon,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, permissions } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -42,15 +46,29 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   const menuItems = [
-    { title: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { title: 'Patients', icon: Users, path: '/patients' },
-    { title: 'Appointments', icon: Calendar, path: '/appointments' },
-    { title: 'Clinical Visits', icon: Stethoscope, path: '/visits' },
-    { title: 'Pharmacy', icon: Pill, path: '/pharmacy' },
-    { title: 'Billing', icon: Receipt, path: '/billing' },
-    { title: 'Reports', icon: TrendingUp, path: '/reports' },
-    { title: 'Settings', icon: SettingsIcon, path: '/settings' },
-  ];
+    { title: 'Dashboard', icon: LayoutDashboard, path: '/', permission: 'view_dashboard' },
+    { title: 'Patients', icon: Users, path: '/patients', permission: 'manage_patients' },
+    { title: 'Appointments', icon: Calendar, path: '/appointments', permission: 'manage_appointments' },
+    { title: 'Clinical Visits', icon: Stethoscope, path: '/visits', permission: 'manage_clinical_visits' },
+    { title: 'Pharmacy', icon: Pill, path: '/pharmacy', permission: 'manage_pharmacy' },
+    { title: 'Billing', icon: Receipt, path: '/billing', permission: 'manage_billing' },
+    { title: 'Reports', icon: TrendingUp, path: '/reports', permission: 'view_reports' },
+    { 
+      title: 'Staff', 
+      icon: Users, 
+      path: '/staff', 
+      permission: 'manage_roles',
+      roles: ['super_admin', 'admin'] 
+    },
+    { title: 'Settings', icon: SettingsIcon, path: '/settings', permission: null },
+  ].filter(item => {
+    // Check permission if specified
+    const hasPermission = !item.permission || permissions[item.permission || ''];
+    // Check role if restricted to specific ones
+    const hasRole = !item.roles || (user && item.roles.includes(user.role));
+    
+    return hasPermission && hasRole;
+  });
 
   const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
@@ -61,27 +79,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-[var(--background)] overflow-hidden transition-colors duration-300">
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div 
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+            className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
             onClick={() => setShowLogoutConfirm(false)}
           />
-          <div className="relative bg-white rounded-3xl shadow-2xl shadow-slate-900/20 w-full max-w-md overflow-hidden animate-modal-pop">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl shadow-slate-900/20 w-full max-w-md overflow-hidden animate-modal-pop border border-slate-100 dark:border-slate-800">
             <div className="p-8 text-center">
               <div className="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-rose-500 border border-rose-100">
                 <LogOut size={40} className="ml-1" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Ready to leave?</h3>
-              <p className="text-slate-500 font-medium mb-8">
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Ready to leave?</h3>
+              <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
                 Are you sure you want to sign out of your AuraMed workspace?
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button 
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="flex-1 px-6 py-3.5 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 border border-slate-200 transition-all active:scale-[0.98]"
+                  className="flex-1 px-6 py-3.5 rounded-2xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all active:scale-[0.98]"
                 >
                   Cancel
                 </button>
@@ -98,19 +116,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       )}
 
       {/* Mobile Header / Hamburger */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 p-1.5 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center">
+          <div className="w-10 h-10 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center">
             <img src={appLogo} alt={appName} className="max-w-full max-h-full object-contain" />
           </div>
-          <span className="font-bold text-slate-900 tracking-tight">{appName}</span>
+          <span className="font-bold text-slate-900 dark:text-white tracking-tight">{appName}</span>
         </div>
-        <button 
-          onClick={toggleMobileMenu}
-          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-        >
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-2.5 text-slate-600 bg-slate-50 border border-slate-100 hover:bg-slate-100 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700/80 rounded-xl transition-all active:scale-95"
+          >
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button 
+            onClick={toggleMobileMenu}
+            className="p-2.5 text-slate-600 bg-slate-50 border border-slate-100 hover:bg-slate-100 dark:text-slate-400 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700/80 rounded-xl transition-all active:scale-95"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Backdrop for Mobile Menu */}
@@ -133,7 +159,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div className="flex items-center gap-3">
             {!isCollapsed ? (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 p-1.5 rounded-xl bg-white shadow-lg flex items-center justify-center overflow-hidden">
+                <div className="w-10 h-10 p-1.5 rounded-xl bg-white flex items-center justify-center overflow-hidden">
                   <img src={appLogo} alt="Logo" className="max-w-full max-h-full object-contain" />
                 </div>
                 <div>
@@ -152,7 +178,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme Toggle */}
+            {!isCollapsed && (
+              <button 
+                onClick={toggleTheme}
+                className="hidden lg:flex p-1.5 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-white transition-colors"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            )}
+            
             {/* Desktop Collapse Toggle */}
             <button 
               onClick={toggleSidebar}
@@ -194,6 +231,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )}
             </Link>
           ))}
+          
+          {/* Theme Toggle (Collapsed Only) */}
+          {isCollapsed && (
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-full p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 transition-all group relative"
+            >
+              {theme === 'dark' ? <Sun size={22} /> : <Moon size={22} />}
+              <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-[10px] font-bold rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap uppercase tracking-widest">
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </div>
+            </button>
+          )}
         </nav>
 
         {/* User Card & Sign Out */}

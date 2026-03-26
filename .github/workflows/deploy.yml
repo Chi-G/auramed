@@ -21,11 +21,12 @@ jobs:
 
       # 1. Build Frontend on GitHub (where Node works)
       - name: Build Frontend
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_PAYSTACK_PUBLIC_KEY: ${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}
         run: |
           cd frontend
+          # This MANUALLY creates the .env file for the build
+          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env
+          echo "VITE_PAYSTACK_PUBLIC_KEY=${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}" >> .env
+          
           npm install
           npm run build
 

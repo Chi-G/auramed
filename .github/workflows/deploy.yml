@@ -80,7 +80,7 @@ jobs:
 
             cd /home/forahiao/public_html/auramed
 
-            # Ensure we're on the correct branch
+            # Sync code
             git fetch origin
             git checkout main
             git reset --hard origin/main
@@ -88,25 +88,24 @@ jobs:
             # Backend deployment steps
             echo "Updating Backend (uv)..."
             cd backend
-            # This ensures your new packages (like pydantic-settings) are installed
-            uv sync
+            # ADDED: --jobs 1 to prevent resource limit errors
+            uv sync --jobs 1
             cd ..
 
             # Frontend deployment steps
             echo "Building Frontend (Vite)..."
             cd frontend
-            # This ensures your frontend fixes actually get built
             npm install
             npm run build
             cd ..
 
-            # Automated Database Migrations
+            # Automated Database Population
             echo "Populating Pharmacy Data..."
-            cd backend && uv run python populate_pharmacy_data.py && cd ..
+            # ADDED: --jobs 1 here as well
+            cd backend && uv run --jobs 1 python populate_pharmacy_data.py && cd ..
 
             # Restart the backend service
             echo "Restarting AuraMed server..."
-            # Using PM2 to restart your app automatically
             pm2 restart auramed || echo "PM2 not found. Please restart your server manually."
 
             echo "Deployment completed successfully!"

@@ -2,9 +2,9 @@ name: Whogohost Deploy Workflow
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     name: Run Verification Tests
     runs-on: ubuntu-latest
 
-    steps: 
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -25,8 +25,8 @@ jobs:
       - name: Setup Node.js (Frontend)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Frontend Build Check
@@ -78,32 +78,32 @@ jobs:
 
             echo "Starting deployment in /home/forahiao/public_html/auramed"
 
-            cd /home/forahiao/public_html/auramed
+            # These variables tell uv and its core libraries to use only ONE thread.
+            # This is essential for restricted shared hosting environments.
+            export UV_CONCURRENT_DOWNLOADS=1
+            export UV_CONCURRENT_BUILDS=1
+            export UV_CONCURRENT_INSTALLS=1
+            export RAYON_NUM_THREADS=1
 
+            cd /home/forahiao/public_html/auramed
             # Sync code
             git fetch origin
             git checkout main
             git reset --hard origin/main
-
             # Backend deployment steps
             echo "Updating Backend (uv)..."
             cd backend
-            # ADDED: --jobs 1 to prevent resource limit errors
-            uv sync --jobs 1
+            uv sync
             cd ..
-
             # Frontend deployment steps
             echo "Building Frontend (Vite)..."
             cd frontend
             npm install
             npm run build
             cd ..
-
             # Automated Database Population
             echo "Populating Pharmacy Data..."
-            # ADDED: --jobs 1 here as well
-            cd backend && uv run --jobs 1 python populate_pharmacy_data.py && cd ..
-
+            cd backend && uv run python populate_pharmacy_data.py && cd ..
             # Restart the backend service
             echo "Restarting AuraMed server..."
             pm2 restart auramed || echo "PM2 not found. Please restart your server manually."

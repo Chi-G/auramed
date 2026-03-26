@@ -16,7 +16,6 @@ import {
   ChevronDown,
   History,
   Undo2,
-  AlertCircle,
   Clock,
   Loader2
 } from 'lucide-react';

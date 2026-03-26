@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import apiClient from '../services/api';
 

@@ -4,6 +4,11 @@ A documentation-driven, premium clinic management platform designed for modern h
 
 ---
 
+### Live Preview
+
+- **Live Demo**: [https://auramed.forahia.org.ng/](https://auramed.forahia.org.ng/)
+- **API Documentation**: [https://auramed.forahia.org.ng/api/docs](https://auramed.forahia.org.ng/api/docs)
+
 ## Key Features
 
 - **Patient Management & EMR**: Registration, demographic tracking, and a comprehensive Electronic Medical Record (EMR) system.
@@ -20,6 +25,7 @@ A documentation-driven, premium clinic management platform designed for modern h
 ## Tech Stack
 
 ### **Backend**
+
 - **Framework**: FastAPI (Python 3.12+)
 - **Database**: MySQL (MariaDB) with SQLAlchemy ORM
 - **Package Manager**: `uv` (Fast & Modern)
@@ -27,6 +33,7 @@ A documentation-driven, premium clinic management platform designed for modern h
 - **Authentication**: JWT-based security with bcrypt hashing
 
 ### **Frontend**
+
 - **Framework**: React 19 + TypeScript
 - **Bundler**: Vite
 - **Styling**: Tailwind CSS (v4)
@@ -38,9 +45,11 @@ A documentation-driven, premium clinic management platform designed for modern h
 ## System Architecture & Data Flow
 
 ### **Architecture**
+
 AuraMed follows a decoupled client-server architecture. The **FastAPI Backend** acts as a centralized RESTful API service, while the **React Frontend** provides a responsive, high-performance user interface.
 
 ### **Data Flow**
+
 ```mermaid
 graph LR
     A[React UI] -->|REST API| B[FastAPI Backend]
@@ -77,9 +86,11 @@ graph TD
 ## Installation Procedures
 
 ### **Root Project**
+
 The repository uses a workspace structure managing both `backend` and `frontend`.
 
 ### **Backend Setup**
+
 1. Navigate to the backend directory:
    ```bash
    cd backend
@@ -98,6 +109,7 @@ The repository uses a workspace structure managing both `backend` and `frontend`
    ```
 
 ### **Frontend Setup**
+
 1. Navigate to the frontend directory:
    ```bash
    cd frontend
@@ -124,12 +136,10 @@ The repository uses a workspace structure managing both `backend` and `frontend`
 ## Deployment & Branching Strategy
 
 ### **Branching Strategy**
+
 We follow a feature-branching workflow to ensure stability:
+
 1. **Create Feature Branch**: `git checkout -b feature/your-feature-name`
 2. **Commit & Push**: Develop and push your changes.
 3. **Pull Request (PR)**: Raise a PR against the `main` branch.
 4. **Merge & Deploy**: Upon approval, merge the PR into `main` for deployment.
-
-### **GitHub Repository**
-- **URL**: [https://github.com/Chi-G/auramed.git](https://github.com/Chi-G/auramed.git)
-

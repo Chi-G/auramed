@@ -36,7 +36,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "frontend/dist/*"
           target: "/home/forahiao/public_html/auramed/"
-          strip_components: 1
+          strip_components: 2
 
       # 3. Handle Backend tasks via SSH
       - name: Backend Tasks via SSH

@@ -3,116 +3,64 @@ name: Whogohost Deploy Workflow
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
-
+ 
 jobs:
-  tests:
-    name: Run Verification Tests
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup uv (Backend)
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
-          version: "latest"
-
-      - name: Setup Node.js (Frontend)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Frontend Build Check
+      # 1. Build Frontend on GitHub (where Node works)
+      - name: Build Frontend
         run: |
           cd frontend
           npm install
           npm run build
 
-      - name: Backend Sync Check
-        run: |
-          cd backend
-          uv sync
+      # 2. Upload the built files (dist) to Whogohost
+      - name: Upload Frontend to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.WHOGOHOST_SSH_HOST }}
+          username: ${{ secrets.WHOGOHOST_SSH_USER }}
+          port: ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "frontend/dist/*"
+          target: "/home/forahiao/public_html/auramed/"
+          strip_components: 1
 
-  deploy:
-    name: Deploy to Whogohost
-    runs-on: ubuntu-latest
-    needs: [tests]
-    # Deploy only on push or manual trigger for the main branch
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install SSH key
-        run: |
-          mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -p ${{ secrets.WHOGOHOST_SSH_PORT || '22' }} -H ${{ secrets.WHOGOHOST_SSH_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Check SSH Connectivity
-        run: |
-          echo "Testing connectivity to ${{ secrets.WHOGOHOST_SSH_HOST }} on port ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}..."
-          nc -zv -w 5 ${{ secrets.WHOGOHOST_SSH_HOST }} ${{ secrets.WHOGOHOST_SSH_PORT || '22' }} || echo "⚠️ Warning: Cannot reach host. Deployment may fail."
-
-      - name: Deploy via SSH
+      # 3. Handle Backend tasks via SSH
+      - name: Backend Tasks via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.WHOGOHOST_SSH_HOST }}
           username: ${{ secrets.WHOGOHOST_SSH_USER }}
           port: ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 120s
-          command_timeout: 30m
-          debug: true
           script: |
             set -e
-
-            echo "Starting deployment in /home/forahiao/public_html/auramed"
-
-            # These variables tell uv and its core libraries to use only ONE thread.
-            # This is essential for restricted shared hosting environments.
-            export UV_CONCURRENT_DOWNLOADS=1
-            export UV_CONCURRENT_BUILDS=1
-            export UV_CONCURRENT_INSTALLS=1
-            export RAYON_NUM_THREADS=1
-
             cd /home/forahiao/public_html/auramed
-            # Sync code
+            
+            # Sync backend code
             git fetch origin
             git checkout main
             git reset --hard origin/main
-            # Backend deployment steps
-            echo "Updating Backend (uv)..."
+
+            # Backend setup
+            export UV_CONCURRENT_DOWNLOADS=1
+            export RAYON_NUM_THREADS=1
             cd backend
             uv sync
-            cd ..
-            # Frontend deployment steps
-            echo "Building Frontend (Vite)..."
-            cd frontend
-            npm install
-            npm run build
-            cd ..
-            # Automated Database Population
-            echo "Populating Pharmacy Data..."
-            cd backend && uv run python populate_pharmacy_data.py && cd ..
-            # Restart the backend service
-            echo "Restarting AuraMed server..."
-            pm2 restart auramed || echo "PM2 not found. Please restart your server manually."
-
-            echo "Deployment completed successfully!"
-
-            # Show deployment info
-            echo ""
-            echo "Deployment Information:"
-            echo "   Branch: main"
-            echo "   Commit: $(git rev-parse --short HEAD)"
-            echo "   Date: $(date)"
+            uv run python populate_pharmacy_data.py
+            
+            # Restart
+            pm2 restart auramed || echo "Manual restart required"

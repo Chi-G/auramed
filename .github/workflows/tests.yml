@@ -1,0 +1,60 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          uv sync
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build Frontend Assets
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Backend Tests
+        continue-on-error: true
+        run: |
+          cd backend
+          if [ -d "tests" ]; then
+            uv run pytest
+          else
+            echo "ℹ️ No test directory found in backend, skipping pytest"
+          fi

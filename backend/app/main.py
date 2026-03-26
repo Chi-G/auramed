@@ -6,14 +6,14 @@ from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"/openapi.json",
-    docs_url="/",
-    redoc_url="/redoc"
+    openapi_url=f"/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc"
 )
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
+    app.add_middleware( 
         CORSMiddleware,
         allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
         allow_credentials=True,

@@ -570,7 +570,7 @@ const Settings = () => {
                         onChange={(e) => setClinicData({...clinicData, consultation_fee: parseFloat(e.target.value)})}
                         className="w-full px-4 py-2 bg-[var(--input)] border border-[var(--border)] text-[var(--foreground)] rounded-xl focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none transition-all font-bold"
                       />
-                      <p className="text-xs text-slate-400 mt-2 italic">Applied automatically to new clinical visits.</p>
+                      <p className="text-xs text-slate-400 mt-2 italic">Applied automatically to new clinical visits (this includes patients ID Card form fee).</p>
                     </div>
                     <div className="flex items-center gap-3 p-4 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
                       <DollarSign size={20} />

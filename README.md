@@ -1,73 +1,135 @@
-# React + TypeScript + Vite
+# AuraMed - Clinic Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A documentation-driven, premium clinic management platform designed for modern healthcare facilities. **AuraMed** handles the complete patient lifecycle, from registration and consultations to pharmacy dispensing and automated billing.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Key Features
 
-## React Compiler
+- **Patient Management & EMR**: Registration, demographic tracking, and a comprehensive Electronic Medical Record (EMR) system.
+- **Clinical Consultations**: Vitals tracking (BP, Glucose, BMI), and clinical notes with detailed diagnosis recording.
+- **Pharmacy CRM & Inventory**: Drug categorisation, inventory tracking, and full prescription fulfillment workflows.
+- **Specialized Diagnostics**: Support for lab investigation requests, findings recording, and medical recommendations.
+- **Automated Billing**: Seamless invoice generation triggered by clinic visits, with integrated Paystack payment processing.
+- **Role-Based Access Control (RBAC)**: Secure, permission-based access for Doctors, Pharmacists, Admins, and Receptionists.
+- **Appointments & Scheduling**: Real-time doctor assignment and scheduled visit management.
+- **Reports & Analytics**: Data-driven insights into clinic activities and financial performance.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### **Backend**
+- **Framework**: FastAPI (Python 3.12+)
+- **Database**: MySQL (MariaDB) with SQLAlchemy ORM
+- **Package Manager**: `uv` (Fast & Modern)
+- **Validation**: Pydantic v2
+- **Authentication**: JWT-based security with bcrypt hashing
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### **Frontend**
+- **Framework**: React 19 + TypeScript
+- **Bundler**: Vite
+- **Styling**: Tailwind CSS (v4)
+- **State Management**: TanStack Query (React Query)
+- **Icons**: Lucide React
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## System Architecture & Data Flow
+
+### **Architecture**
+AuraMed follows a decoupled client-server architecture. The **FastAPI Backend** acts as a centralized RESTful API service, while the **React Frontend** provides a responsive, high-performance user interface.
+
+### **Data Flow**
+```mermaid
+graph LR
+    A[React UI] -->|REST API| B[FastAPI Backend]
+    B -->|Pydantic| C[Data Validation]
+    C -->|SQLAlchemy| D[(MySQL Database)]
+    D -->|Persistent Storage| C
+    C -->|JSON Response| B
+    B -->|Response| A
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Queue Flow (Patient Journey)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The clinical workflow is designed as a structured "Queue," guiding patients through each department:
+
+```mermaid
+graph TD
+    Start((Start)) --> Reg[Registration]
+    Reg --> Vitals[Vitals Station]
+    Vitals --> Consult[Doctor Consultation]
+    Consult --> Lab{Diagnostics Required?}
+    Lab -- Yes --> Tests[Laboratory/Lab]
+    Tests --> Consult
+    Lab -- No --> Pharm{Prescription?}
+    Pharm -- Yes --> Pharmacy[Pharmacy Dispensing]
+    Pharmacy --> Bill[Billing & Payment]
+    Pharm -- No --> Bill
+    Bill --> End((Discharge))
 ```
+
+---
+
+## Installation Procedures
+
+### **Root Project**
+The repository uses a workspace structure managing both `backend` and `frontend`.
+
+### **Backend Setup**
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   uv sync
+   ```
+3. Initialize the database and seed demo data (optional):
+   ```bash
+   uv run python app/seed_demo.py
+   ```
+4. Start the server:
+   ```bash
+   uv run uvicorn app.main:app --reload
+   ```
+
+### **Frontend Setup**
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## Documentation & API
+
+- **Interactive API Docs**: Once the backend is running, visit `http://localhost:8000/` to access the Swagger UI.
+- **API Version**: `v1`
+- **Postman Support**: Postman collections can be generated by importing the `openapi.json` from the Swagger docs.
+
+---
+
+## Deployment & Branching Strategy
+
+### **Branching Strategy**
+We follow a feature-branching workflow to ensure stability:
+1. **Create Feature Branch**: `git checkout -b feature/your-feature-name`
+2. **Commit & Push**: Develop and push your changes.
+3. **Pull Request (PR)**: Raise a PR against the `main` branch.
+4. **Merge & Deploy**: Upon approval, merge the PR into `main` for deployment.
+
+### **GitHub Repository**
+- **URL**: [https://github.com/Chi-G/auramed.git](https://github.com/Chi-G/auramed.git)
+

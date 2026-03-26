@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
- 
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -47,20 +47,20 @@ jobs:
           port: ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            set -e
-            cd /home/forahiao/public_html/auramed
-            
-            # Sync backend code
-            git fetch origin
-            git checkout main
-            git reset --hard origin/main
+             set -e
+             cd /home/forahiao/public_html/auramed
+             
+             # Sync backend code
+             git fetch origin
+             git checkout main
+             git reset --hard origin/main
 
-            # Backend setup
-            export UV_CONCURRENT_DOWNLOADS=1
-            export RAYON_NUM_THREADS=1
-            cd backend
-            uv sync
-            uv run python populate_pharmacy_data.py
-            
-            # Restart
-            pm2 restart auramed || echo "Manual restart required"
+             # Backend setup
+             export UV_CONCURRENT_DOWNLOADS=1
+             export RAYON_NUM_THREADS=1
+             cd backend
+             uv sync
+             uv run python populate_pharmacy_data.py
+             
+             # Restart
+             pm2 restart auramed || echo "Manual restart required"

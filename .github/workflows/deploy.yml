@@ -26,9 +26,15 @@ jobs:
           # This MANUALLY creates the .env file for the build
           echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > .env
           echo "VITE_PAYSTACK_PUBLIC_KEY=${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}" >> .env
-          
+
           npm install
           npm run build
+
+      # Pre-check connectivity to the server
+      - name: Pre-check Connectivity
+        run: |
+          echo "Testing SSH port connectivity (port ${{ secrets.WHOGOHOST_SSH_PORT || '22' }})..."
+          nc -zv -w 5 ${{ secrets.WHOGOHOST_SSH_HOST }} ${{ secrets.WHOGOHOST_SSH_PORT || '22' }} || echo "Port is NOT reachable. Firewall may be blocking GitHub IPs."
 
       # 2. Upload the built files (dist) to Whogohost
       - name: Upload Frontend to Server

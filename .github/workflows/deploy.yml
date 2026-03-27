@@ -36,19 +36,7 @@ jobs:
           echo "Testing SSH port connectivity (port ${{ secrets.WHOGOHOST_SSH_PORT || '22' }})..."
           nc -zv -w 5 ${{ secrets.WHOGOHOST_SSH_HOST }} ${{ secrets.WHOGOHOST_SSH_PORT || '22' }} || echo "Port is NOT reachable. Firewall may be blocking GitHub IPs."
 
-      # 2. Upload the built files (dist) to Whogohost
-      - name: Upload Frontend to Server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.WHOGOHOST_SSH_HOST }}
-          username: ${{ secrets.WHOGOHOST_SSH_USER }}
-          port: ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "frontend/dist/*"
-          target: "/home/forahiao/public_html/auramed/"
-          strip_components: 2
-
-      # 3. Handle Backend tasks via SSH
+      # 2. Handle Backend tasks via SSH first (syncs git and cleans up)
       - name: Backend Tasks via SSH
         uses: appleboy/ssh-action@master
         with:
@@ -58,6 +46,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
+            # Ensure PM2 and other binaries are in PATH
+            source $HOME/.bash_profile || source $HOME/.bashrc || true
+            export PATH=$PATH:$HOME/bin:$HOME/.local/bin
+
             cd /home/forahiao/public_html/auramed
 
             # Sync backend code
@@ -72,9 +64,20 @@ jobs:
             cd backend
             uv sync
 
-            # 1. NEW: Create Tables and Default Users + Pharmacy Data
-            # This fixes the "Table doesn't exist" error and seeds everything in one pass
+            # 1. Create Tables and Default Users + Pharmacy Data
             uv run python -m app.initial_data
 
             # Restart
             pm2 restart auramed || echo "Manual restart required"
+
+      # 3. Upload the built frontend files (dist) AFTER git clean
+      - name: Upload Frontend to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.WHOGOHOST_SSH_HOST }}
+          username: ${{ secrets.WHOGOHOST_SSH_USER }}
+          port: ${{ secrets.WHOGOHOST_SSH_PORT || '22' }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "frontend/dist/*"
+          target: "/home/forahiao/public_html/auramed/"
+          strip_components: 2

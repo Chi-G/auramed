@@ -355,7 +355,7 @@ const Login: React.FC = () => {
                   <div>
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Final Effective Permissions</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {Object.entries(diagnosticData.final_permissions).map(([key, val]: [string, any]) => (
+                      {Object.entries(diagnosticData.final_permissions || {}).map(([key, val]: [string, any]) => (
                         <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100">
                           <span className="text-xs font-bold text-slate-600">{key}</span>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${val ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>

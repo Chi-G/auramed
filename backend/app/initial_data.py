@@ -104,20 +104,29 @@ def init_db():
 
     # Seed for all UserRole or existing in permissions_matrix
     for role in UserRole:
-        perms = permissions_matrix.get(role, {k: False for k in ["view_dashboard", "manage_doctors", "manage_appointments", "manage_patients", "manage_clinical_visits", "manage_pharmacy", "manage_billing", "manage_settings", "manage_roles", "view_reports", "delete_patient", "delete_appointment", "delete_visit"]})
+        role_value = role.value if hasattr(role, 'value') else str(role)
+        perms = permissions_matrix.get(role, {})
+        
+        # Ensure we also give Superusers/Admins is_superuser = True if they already exist
+        if role in [UserRole.SUPER_ADMIN, UserRole.ADMIN]:
+            users = db.query(User).filter(User.role == role_value).all()
+            for u in users:
+                if not u.is_superuser:
+                    u.is_superuser = True
+                    db.add(u)
         for key, enabled in perms.items():
             exists = db.query(RolePermission).filter(
-                RolePermission.role == role,
+                RolePermission.role == role_value,
                 RolePermission.permission_key == key
             ).first()
             if not exists:
-                new_perm = RolePermission(role=role, permission_key=key, is_enabled=enabled)
+                new_perm = RolePermission(role=role_value, permission_key=key, is_enabled=enabled)
                 db.add(new_perm)
             else:
                 exists.is_enabled = enabled
     
     db.commit()
-    print("Default permissions seeded successfully.")
+    print("Default permissions seeded and superuser flags fixed.")
 
 if __name__ == "__main__":
     init_db()

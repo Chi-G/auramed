@@ -67,11 +67,11 @@ const PermissionRoute = ({ children, permission }: { children: React.ReactNode, 
 };
 
 const Home = () => {
-  const { permissions, isLoading } = useAuth();
+  const { user, permissions, isLoading } = useAuth();
 
   if (isLoading) return null;
 
-  if (permissions.view_dashboard) {
+  if (user?.role === 'super_admin' || permissions.view_dashboard) {
     return <Dashboard />;
   }
 

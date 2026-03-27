@@ -48,6 +48,22 @@ def get_my_permissions(
     """
     Get permissions for the current logged in user.
     """
+
+    if current_user.is_superuser:
+        # God Mode: Superusers automatically get all possible permissions
+        all_perms = db.query(RolePermission.permission_key).distinct().all()
+        
+        # Fallback if the table is literally empty on the live server
+        if not all_perms:
+            return {
+                k: True for k in [
+                    "view_dashboard", "manage_patients", "manage_appointments", 
+                    "manage_clinical_visits", "manage_pharmacy", "manage_billing", 
+                    "manage_settings", "manage_roles", "view_reports"
+                ]
+            }
+        return {p[0]: True for p in all_perms}
+
     permissions = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
     return {p.permission_key: p.is_enabled for p in permissions}
 

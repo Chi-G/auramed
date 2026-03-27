@@ -62,8 +62,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     },
     { title: 'Settings', icon: SettingsIcon, path: '/settings', permission: null },
   ].filter(item => {
-    // Check permission if specified
+    // 1. If user is super_admin, they see everything (God Mode)
+    if (user?.role === 'super_admin') return true;
+    
+    // 2. Otherwise, check specific permissions
     const hasPermission = !item.permission || permissions[item.permission || ''];
+    
     // Check role if restricted to specific ones
     const hasRole = !item.roles || (user && item.roles.includes(user.role));
     

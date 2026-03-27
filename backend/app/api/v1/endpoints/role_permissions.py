@@ -64,8 +64,43 @@ def get_my_permissions(
         keys = list(set(all_perms + default_keys))
         return {k: True for k in keys}
 
-    permissions = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
-    return {p.permission_key: p.is_enabled for p in permissions}
+    from sqlalchemy import func
+    permissions = db.query(RolePermission).filter(
+        func.lower(RolePermission.role) == current_user.role.lower()
+    ).all()
+    
+    result = {p.permission_key: p.is_enabled for p in permissions}
+    
+    if not result:
+        # Fallback to defaults based on role if DB is missing entries or case mismatch occurred
+        role = current_user.role.lower()
+        if role == 'admin':
+            return {k: True for k in [
+                "view_dashboard", "manage_patients", "manage_appointments", 
+                "manage_clinical_visits", "manage_pharmacy", "manage_billing", 
+                "manage_settings", "manage_roles", "view_reports", "manage_doctors"
+            ]}
+        elif role == 'doctor':
+            return {k: True for k in [
+                "view_dashboard", "manage_appointments", "manage_patients", 
+                "manage_clinical_visits", "manage_pharmacy", "view_reports"
+            ]}
+        elif role == 'nurse':
+            return {k: True for k in [
+                "view_dashboard", "manage_appointments", "manage_patients", 
+                "manage_clinical_visits", "view_reports"
+            ]}
+        elif role == 'receptionist':
+            return {k: True for k in [
+                "manage_appointments", "manage_patients", "manage_clinical_visits", "manage_billing"
+            ]}
+        elif role == 'cashier':
+            return {k: True for k in [
+                "manage_patients", "manage_pharmacy", "manage_billing"
+            ]}
+            
+    return result
+
 
 @router.put("/{role}", response_model=Dict[str, bool])
 def update_role_permissions(

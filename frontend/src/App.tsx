@@ -57,7 +57,8 @@ const PermissionRoute = ({ children, permission }: { children: React.ReactNode, 
 
   // Hard constraint: Only super_admin and admin can access management paths
   const isManagementPath = permission === 'manage_roles';
-  const hasAuthorizedRole = user && (user.role === 'super_admin' || user.role === 'admin');
+  const role = user?.role?.toLowerCase();
+  const hasAuthorizedRole = role === 'super_admin' || role === 'admin';
 
   if (!permissions[permission] || (isManagementPath && !hasAuthorizedRole)) {
     return <AccessDeniedModal />;
@@ -71,7 +72,8 @@ const Home = () => {
 
   if (isLoading) return null;
 
-  if (user?.role === 'super_admin' || permissions.view_dashboard) {
+  const role = user?.role?.toLowerCase();
+  if (role === 'super_admin' || role === 'admin' || permissions.view_dashboard) {
     return <Dashboard />;
   }
 
@@ -81,6 +83,7 @@ const Home = () => {
 
   return <Navigate to="/settings" replace />;
 };
+
 
 function App() {
   return (

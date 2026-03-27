@@ -196,6 +196,35 @@ const Login: React.FC = () => {
               </div>
             </form>
             
+            {/* Quick Login Section */}
+            <div className="mt-10 border-t border-slate-100 pt-8">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center justify-center md:justify-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                Quick Login Access (Demo Mode)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Admin', email: 'admin@auramed.com', pass: 'admin123', icon: 'bg-slate-900' },
+                  { label: 'Doctor', email: 'doctor@auramed.com', pass: 'doctor123', icon: 'bg-sky-600' },
+                  { label: 'Nurse', email: 'nurse@auramed.com', pass: 'nurse123', icon: 'bg-indigo-600' },
+                  { label: 'Receptionist', email: 'receptionist@auramed.com', pass: 'reception123', icon: 'bg-emerald-600' }
+                ].map((role) => (
+                  <button
+                    key={role.label}
+                    type="button"
+                    onClick={() => {
+                      setEmail(role.email);
+                      setPassword(role.pass);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 transition-all group group-hover:shadow-sm text-left"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${role.icon}`} />
+                    <span className="text-xs font-bold text-slate-700">{role.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p className="mt-8 text-center text-sm font-medium text-slate-400">
               Not part of the clinical staff? <span onClick={() => setIsRequestModalOpen(true)} className="text-slate-700 font-bold hover:underline cursor-pointer">Request Access</span>
             </p>

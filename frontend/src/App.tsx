@@ -73,11 +73,28 @@ const Home = () => {
   if (isLoading) return null;
 
   const role = user?.role?.toLowerCase();
-  if (role === 'super_admin' || role === 'admin' || permissions.view_dashboard) {
+  
+  // God Mode bypass for SuperAdmins and Admins OR any staff with dashboard permission
+  const hasDashboardAccess = 
+    role === 'super_admin' || 
+    role === 'superadmin' || 
+    role === 'admin' || 
+    permissions.view_dashboard;
+
+  if (hasDashboardAccess) {
     return <Dashboard />;
   }
 
-  if (permissions.manage_patients) {
+  // Functional Area fallback
+  if (role === 'doctor' || permissions.manage_clinical_visits) {
+    return <Navigate to="/visits" replace />;
+  }
+
+  if (role === 'nurse' || permissions.manage_appointments) {
+    return <Navigate to="/appointments" replace />;
+  }
+
+  if (role === 'receptionist' || permissions.manage_patients) {
     return <Navigate to="/patients" replace />;
   }
 

@@ -73,31 +73,44 @@ def get_my_permissions(
     
     if not result:
         # Fallback to defaults based on role if DB is missing entries or case mismatch occurred
-        role = current_user.role.lower()
-        if role == 'admin':
+        # Normalize common role variations
+        role_map = {
+            'super_admin': 'superadmin',
+            'superadmin': 'superadmin',
+            'admin': 'admin',
+            'doctor': 'doctor',
+            'nurse': 'nurse',
+            'receptionist': 'receptionist',
+            'cashier': 'cashier'
+        }
+        r_normalized = role_map.get(role, role)
+
+        if r_normalized == 'admin':
             return {k: True for k in [
                 "view_dashboard", "manage_patients", "manage_appointments", 
                 "manage_clinical_visits", "manage_pharmacy", "manage_billing", 
                 "manage_settings", "manage_roles", "view_reports", "manage_doctors"
             ]}
-        elif role == 'doctor':
+        elif r_normalized == 'doctor':
             return {k: True for k in [
                 "view_dashboard", "manage_appointments", "manage_patients", 
                 "manage_clinical_visits", "manage_pharmacy", "view_reports"
             ]}
-        elif role == 'nurse':
+        elif r_normalized == 'nurse':
             return {k: True for k in [
                 "view_dashboard", "manage_appointments", "manage_patients", 
                 "manage_clinical_visits", "view_reports"
             ]}
-        elif role == 'receptionist':
+        elif r_normalized == 'receptionist':
             return {k: True for k in [
-                "manage_appointments", "manage_patients", "manage_clinical_visits", "manage_billing"
+                "view_dashboard", "manage_appointments", "manage_patients", 
+                "manage_clinical_visits", "manage_billing"
             ]}
-        elif role == 'cashier':
+        elif r_normalized == 'cashier':
             return {k: True for k in [
-                "manage_patients", "manage_pharmacy", "manage_billing"
+                "view_dashboard", "manage_patients", "manage_pharmacy", "manage_billing"
             ]}
+
             
     return result
 

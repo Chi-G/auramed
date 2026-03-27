@@ -72,11 +72,10 @@ const Home = () => {
 
   if (isLoading) return null;
 
-  const role = user?.role?.toLowerCase();
+  const role = `${user?.role || ""}`.toLowerCase().replace("_", "").replace(" ", "");
   
-  // God Mode bypass for SuperAdmins and Admins OR any staff with dashboard permission
+  // High-level access gate
   const hasDashboardAccess = 
-    role === 'super_admin' || 
     role === 'superadmin' || 
     role === 'admin' || 
     permissions.view_dashboard;
@@ -85,18 +84,11 @@ const Home = () => {
     return <Dashboard />;
   }
 
-  // Functional Area fallback
-  if (role === 'doctor' || permissions.manage_clinical_visits) {
-    return <Navigate to="/visits" replace />;
-  }
-
-  if (role === 'nurse' || permissions.manage_appointments) {
-    return <Navigate to="/appointments" replace />;
-  }
-
-  if (role === 'receptionist' || permissions.manage_patients) {
-    return <Navigate to="/patients" replace />;
-  }
+  // Fallback map for specific roles stuck on Settings
+  if (role === 'doctor') return <Navigate to="/visits" replace />;
+  if (role === 'nurse') return <Navigate to="/appointments" replace />;
+  if (role === 'receptionist') return <Navigate to="/patients" replace />;
+  if (role === 'cashier') return <Navigate to="/billing" replace />;
 
   return <Navigate to="/settings" replace />;
 };

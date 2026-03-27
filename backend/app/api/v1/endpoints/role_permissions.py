@@ -8,37 +8,37 @@ from app import schemas
 
 router = APIRouter()
 
-@router.get("/", response_model=Dict[str, Dict[str, bool]])
-def get_role_permissions(
+@router.get("/diagnostic", response_model=Dict[str, Any])
+def get_permission_diagnostic(
     db: Session = Depends(deps.get_db),
     current_user = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Get all role permissions. Superusers or users with manage_roles can access this.
-    Returns a matrix: { role: { permission_key: is_enabled } }
+    Diagnostic tool to trace why a user has certain permissions.
     """
-    # Check if user has manage_roles permission
-    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
-    has_manage_roles = any(p.permission_key == 'manage_roles' and p.is_enabled for p in user_perms)
+    role_raw = current_user.role or ""
+    role_normalized = str(role_raw).lower().replace("_", "").replace(" ", "")
+
+    from sqlalchemy import func
+    db_perms = db.query(RolePermission).filter(
+        func.lower(RolePermission.role) == str(role_raw).lower()
+    ).all()
     
-    if not current_user.is_superuser and not has_manage_roles:
-        raise HTTPException(
-            status_code=403, detail="The user doesn't have enough privileges"
-        )
-    permissions = db.query(RolePermission).all()
-    matrix = {}
+    db_result = {p.permission_key: p.is_enabled for p in db_perms}
     
-    # Initialize matrix for all roles
-    for role in UserRole:
-        matrix[role.value] = {}
-        
-    for p in permissions:
-        # p.role is now a string, not an enum member
-        role_key = p.role
-        if role_key in matrix:
-            matrix[role_key][p.permission_key] = p.is_enabled
-        
-    return matrix
+    # Calculate final permissions using the same logic as /my
+    final_perms = get_my_permissions(db=db, current_user=current_user)
+    
+    return {
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "role_raw": role_raw,
+        "role_normalized": role_normalized,
+        "is_superuser": current_user.is_superuser,
+        "db_permissions": db_result,
+        "final_permissions": final_perms,
+        "logic_summary": "Superuser Bypass" if current_user.is_superuser else "Standard Role Logic + Additive Fallbacks"
+    }
 
 @router.get("/my", response_model=Dict[str, bool])
 def get_my_permissions(
@@ -71,48 +71,78 @@ def get_my_permissions(
     
     result = {p.permission_key: p.is_enabled for p in permissions}
     
-    if not result:
-        # Fallback to defaults based on role if DB is missing entries or case mismatch occurred
-        # Normalize common role variations
-        role_map = {
-            'super_admin': 'superadmin',
-            'superadmin': 'superadmin',
-            'admin': 'admin',
-            'doctor': 'doctor',
-            'nurse': 'nurse',
-            'receptionist': 'receptionist',
-            'cashier': 'cashier'
-        }
-        r_normalized = role_map.get(role, role)
+    # NORMALIZATION & FALLBACKS
+    # This ensures that even if DB is missing rows, staff can still function.
+    role_name = str(current_user.role).lower().replace("_", "").replace(" ", "")
+    
+    # Mandated Permissions for Staff (Always True even if False in DB)
+    mandated_perms = []
+    if role_name in ['admin', 'superadmin']:
+        mandated_perms = [
+            "view_dashboard", "manage_patients", "manage_appointments", 
+            "manage_clinical_visits", "manage_pharmacy", "manage_billing", 
+            "manage_settings", "manage_roles", "view_reports", "manage_doctors"
+        ]
+    elif role_name == 'doctor':
+        mandated_perms = [
+            "view_dashboard", "manage_appointments", "manage_patients", 
+            "manage_clinical_visits", "manage_pharmacy", "view_reports"
+        ]
+    elif role_name == 'nurse':
+        mandated_perms = [
+            "view_dashboard", "manage_appointments", "manage_patients", 
+            "manage_clinical_visits", "view_reports"
+        ]
+    elif role_name == 'receptionist':
+        mandated_perms = [
+            "view_dashboard", "manage_appointments", "manage_patients", 
+            "manage_clinical_visits", "manage_billing"
+        ]
+    elif role_name == 'cashier':
+        mandated_perms = [
+            "view_dashboard", "manage_patients", "manage_pharmacy", "manage_billing"
+        ]
+    
+    # Apply mandated defaults IF the permission is not already True in DB (Additive)
+    for p_key in mandated_perms:
+        if p_key not in result or not result[p_key]:
+            result[p_key] = True
 
-        if r_normalized == 'admin':
-            return {k: True for k in [
-                "view_dashboard", "manage_patients", "manage_appointments", 
-                "manage_clinical_visits", "manage_pharmacy", "manage_billing", 
-                "manage_settings", "manage_roles", "view_reports", "manage_doctors"
-            ]}
-        elif r_normalized == 'doctor':
-            return {k: True for k in [
-                "view_dashboard", "manage_appointments", "manage_patients", 
-                "manage_clinical_visits", "manage_pharmacy", "view_reports"
-            ]}
-        elif r_normalized == 'nurse':
-            return {k: True for k in [
-                "view_dashboard", "manage_appointments", "manage_patients", 
-                "manage_clinical_visits", "view_reports"
-            ]}
-        elif r_normalized == 'receptionist':
-            return {k: True for k in [
-                "view_dashboard", "manage_appointments", "manage_patients", 
-                "manage_clinical_visits", "manage_billing"
-            ]}
-        elif r_normalized == 'cashier':
-            return {k: True for k in [
-                "view_dashboard", "manage_patients", "manage_pharmacy", "manage_billing"
-            ]}
-
-            
     return result
+
+@router.get("/", response_model=Dict[str, Dict[str, bool]])
+def get_role_permissions(
+    db: Session = Depends(deps.get_db),
+    current_user = Depends(deps.get_current_active_user),
+) -> Any:
+    """
+    Get all role permissions. Superusers or users with manage_roles can access this.
+    Returns a matrix: { role: { permission_key: is_enabled } }
+    """
+    # Check if user has manage_roles permission
+    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
+    has_manage_roles = any(p.permission_key == 'manage_roles' and p.is_enabled for p in user_perms)
+    
+    if not current_user.is_superuser and not has_manage_roles:
+        raise HTTPException(
+            status_code=403, detail="The user doesn't have enough privileges"
+        )
+    permissions = db.query(RolePermission).all()
+    matrix = {}
+    
+    # Initialize matrix for all roles
+    for role in UserRole:
+        matrix[role.value] = {}
+        
+    for p in permissions:
+        # p.role is now a string, not an enum member
+        role_key = p.role
+        if role_key in matrix:
+            matrix[role_key][p.permission_key] = p.is_enabled
+        
+    return matrix
+
+
 
 
 @router.put("/{role}", response_model=Dict[str, bool])

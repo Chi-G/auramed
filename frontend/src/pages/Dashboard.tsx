@@ -185,7 +185,7 @@ const Dashboard: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)] opacity-70">Last 7 Days</span>
             </div>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                 <AreaChart data={trends?.revenue || []}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -231,7 +231,7 @@ const Dashboard: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)] opacity-70">Activity Level</span>
             </div>
             <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                 <BarChart data={trends?.visits || []}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                   <XAxis 

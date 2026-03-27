@@ -12,6 +12,9 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
+  const [diagnosticData, setDiagnosticData] = useState<any>(null);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -51,19 +54,45 @@ const Login: React.FC = () => {
         await login(response.data.access_token);
         navigate('/');
       }, 4000);
-      
     } catch (err: any) {
       setLoading(false);
       console.error("Login Error:", err);
       if (err.response?.status === 401) {
         setError('Invalid email or password. Please try again.');
-        // Clear password on failed login for security/UX
         setPassword('');
       } else if (err.code === 'ERR_NETWORK') {
          setError('Unable to connect to server. Please check your internet or try again later.');
       } else {
         setError(err.response?.data?.detail || 'An unexpected error occurred during login.');
       }
+    }
+  };
+
+  const runDiagnostic = async (roleEmail: string, rolePass: string) => {
+    setIsDiagnosing(true);
+    setDiagnosticData(null);
+    setIsDiagnosticOpen(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('username', roleEmail);
+      formData.append('password', rolePass);
+
+      const loginRes = await apiClient.post('/login/access-token', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const token = loginRes.data.access_token;
+      
+      const diagRes = await apiClient.get('/permissions/diagnostic', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setDiagnosticData(diagRes.data);
+    } catch (err: any) {
+      setDiagnosticData({ error: err.response?.data?.detail || 'Failed to fetch diagnostic data.' });
+    } finally {
+      setIsDiagnosing(false);
     }
   };
 
@@ -209,18 +238,22 @@ const Login: React.FC = () => {
                   { label: 'Nurse', email: 'nurse@auramed.com', pass: 'nurse123', icon: 'bg-indigo-600' },
                   { label: 'Receptionist', email: 'receptionist@auramed.com', pass: 'reception123', icon: 'bg-emerald-600' }
                 ].map((role) => (
-                  <button
+                  <div 
                     key={role.label}
-                    type="button"
-                    onClick={() => {
-                      setEmail(role.email);
-                      setPassword(role.pass);
-                    }}
-                    className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 transition-all group group-hover:shadow-sm text-left"
+                    className="flex justify-between items-center p-2.5 rounded-xl border border-slate-100 bg-white hover:bg-slate-50 hover:border-slate-200 transition-all group group-hover:shadow-sm text-left"
                   >
-                    <div className={`w-2 h-2 rounded-full ${role.icon}`} />
-                    <span className="text-xs font-bold text-slate-700">{role.label}</span>
-                  </button>
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setEmail(role.email); setPassword(role.pass); }}>
+                      <div className={`w-2 h-2 rounded-full ${role.icon}`} />
+                      <span className="text-xs font-bold text-slate-700">{role.label}</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => runDiagnostic(role.email, role.pass)}
+                      className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-slate-200 rounded-lg transition-all text-[9px] font-black text-slate-400 hover:text-sky-600 uppercase tracking-tighter"
+                    >
+                      Verify
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
@@ -276,6 +309,82 @@ const Login: React.FC = () => {
         isOpen={isRequestModalOpen} 
         onClose={() => setIsRequestModalOpen(false)} 
       />
+
+      {/* Diagnostic Modal */}
+      {isDiagnosticOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Permission Diagnostic</h3>
+                <p className="text-xs font-medium text-slate-500">Live Backend Calculation Trace</p>
+              </div>
+              <button 
+                onClick={() => setIsDiagnosticOpen(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-400"
+              >
+                <EyeOff size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-auto">
+              {isDiagnosing ? (
+                <div className="flex flex-col items-center py-12">
+                  <Loader2 className="animate-spin text-sky-500 mb-4" size={32} />
+                  <p className="text-sm font-bold text-slate-600">Checking auth logic...</p>
+                </div>
+              ) : diagnosticData?.error ? (
+                <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-bold">
+                  {diagnosticData.error}
+                </div>
+              ) : diagnosticData ? (
+                <div className="space-y-6">
+                  {/* Summary Grid */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Raw Role (DB)</p>
+                      <p className="text-sm font-bold text-slate-900">{diagnosticData.role_raw}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100">
+                      <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">Normalized Role</p>
+                      <p className="text-sm font-bold text-sky-700">{diagnosticData.role_normalized}</p>
+                    </div>
+                  </div>
+
+                  {/* Permissions List */}
+                  <div>
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Final Effective Permissions</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(diagnosticData.final_permissions).map(([key, val]: [string, any]) => (
+                        <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100">
+                          <span className="text-xs font-bold text-slate-600">{key}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${val ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                            {val ? 'Granted' : 'Denied'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <p className="text-xs font-bold text-indigo-700">Strategy: {diagnosticData.logic_summary}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setIsDiagnosticOpen(false)}
+                className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -24,12 +24,17 @@ def get_clinic_summary(
     Get a high-level summary for the dashboard.
     """
     # Permission check - only allow users with view_reports to see summary/trends
-    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
-    has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
-    
-    if not current_user.is_superuser and not has_view_reports:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Not enough privileges to view reports summary")
+    role = current_user.role.lower()
+    if not current_user.is_superuser and role != 'admin':
+        user_perms = db.query(RolePermission).filter(
+            func.lower(RolePermission.role) == role
+        ).all()
+        has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
+        
+        if not has_view_reports:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Not enough privileges to view reports summary")
+
 
     today = date.today()
     
@@ -93,30 +98,42 @@ def get_activity_trends(
     """
     Get visit and revenue trends for the last 7 days.
     """
-    # Permission check
-    user_perms = db.query(RolePermission).filter(RolePermission.role == current_user.role).all()
-    has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
+    role = current_user.role.lower()
+    if not current_user.is_superuser and role != 'admin':
+        user_perms = db.query(RolePermission).filter(
+            func.lower(RolePermission.role) == role
+        ).all()
+        has_view_reports = any(p.permission_key == 'view_reports' and p.is_enabled for p in user_perms)
+        
+        if not has_view_reports:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail="Not enough privileges to view reports trends")
+
+    print(f"DEBUG: Fetching trends for user {current_user.id} with role {current_user.role}")
     
-    if not current_user.is_superuser and not has_view_reports:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=403, detail="Not enough privileges to view reports trends")
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    # Start of today minus 7 days to be consistent
+    today = date.today()
+    seven_days_ago = today - timedelta(days=7)
     
-    # Revenue trend
+    # Revenue trend - using total_amount to match summary "total revenue"
     revenue_q = db.query(
         func.date(BillModel.created_at).label('date'),
-        func.sum(BillModel.amount_paid).label('revenue')
-    ).filter(BillModel.created_at >= seven_days_ago)
+        func.sum(BillModel.total_amount).label('revenue')
+    ).filter(func.date(BillModel.created_at) >= seven_days_ago)
 
     # Visit trend
     visit_q = db.query(
         func.date(VisitModel.visit_date).label('date'),
         func.count(VisitModel.id).label('visits')
-    ).filter(VisitModel.visit_date >= seven_days_ago)
+    ).filter(func.date(VisitModel.visit_date) >= seven_days_ago)
     
     if current_user.role == UserRole.DOCTOR:
         revenue_q = revenue_q.join(VisitModel).filter(VisitModel.doctor_id == current_user.id)
         visit_q = visit_q.filter(VisitModel.doctor_id == current_user.id)
+    elif current_user.role != UserRole.ADMIN and not current_user.is_superuser:
+        # Filter by clinic_id for staff
+        revenue_q = revenue_q.join(VisitModel).filter(VisitModel.clinic_id == current_user.clinic_id)
+        visit_q = visit_q.filter(VisitModel.clinic_id == current_user.clinic_id)
         
     revenue_trend = revenue_q.group_by(func.date(BillModel.created_at))\
      .order_by(func.date(BillModel.created_at)).all()
@@ -124,7 +141,24 @@ def get_activity_trends(
     visit_trend = visit_q.group_by(func.date(VisitModel.visit_date))\
      .order_by(func.date(VisitModel.visit_date)).all()
 
+    print(f"DEBUG: Found {len(revenue_trend)} revenue points and {len(visit_trend)} visit points")
+
+    # Send both 'amount' and 'revenue' keys to satisfy different frontend pages
     return {
-        "revenue": [{"date": r.date, "amount": float(r.revenue)} for r in revenue_trend],
-        "visits": [{"date": v.date, "count": int(v.visits)} for v in visit_trend]
+        "revenue": [
+            {
+                "date": str(r.date), 
+                "amount": float(r.revenue or 0), 
+                "revenue": float(r.revenue or 0)
+            } for r in revenue_trend
+        ],
+        "visits": [
+            {
+                "date": str(v.date), 
+                "count": int(v.visits or 0),
+                "visits": int(v.visits or 0)
+            } for v in visit_trend
+        ]
     }
+
+

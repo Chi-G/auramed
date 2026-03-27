@@ -64,6 +64,7 @@ jobs:
             git fetch origin
             git checkout main
             git reset --hard origin/main
+            git clean -df
 
             # Backend setup
             export UV_CONCURRENT_DOWNLOADS=1
@@ -71,12 +72,9 @@ jobs:
             cd backend
             uv sync
 
-            # 1. NEW: Create Tables and Default Users
-            # This fixes the "Table doesn't exist" error
+            # 1. NEW: Create Tables and Default Users + Pharmacy Data
+            # This fixes the "Table doesn't exist" error and seeds everything in one pass
             uv run python -m app.initial_data
-
-            # 2. Populate Pharmacy Data
-            uv run python populate_pharmacy_data.py
 
             # Restart
             pm2 restart auramed || echo "Manual restart required"

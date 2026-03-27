@@ -16,28 +16,42 @@ def get_permission_diagnostic(
     """
     Diagnostic tool to trace why a user has certain permissions.
     """
-    role_raw = current_user.role or ""
-    role_normalized = str(role_raw).lower().replace("_", "").replace(" ", "")
+    # Defensive role extraction
+    role_raw = current_user.role if current_user.role is not None else "NONE_IN_DB"
+    role_normalized = str(role_raw).lower().replace("_", "").replace(" ", "") if current_user.role else "none"
 
     from sqlalchemy import func
-    db_perms = db.query(RolePermission).filter(
-        func.lower(RolePermission.role) == str(role_raw).lower()
-    ).all()
+    db_perms = []
+    if current_user.role:
+        db_perms = db.query(RolePermission).filter(
+            func.lower(RolePermission.role) == str(role_raw).lower()
+        ).all()
     
     db_result = {p.permission_key: p.is_enabled for p in db_perms}
     
     # Calculate final permissions using the same logic as /my
     final_perms = get_my_permissions(db=db, current_user=current_user)
     
+    # Trace logic path
+    strategy = "Superuser/SuperAdmin Bypass" if (current_user.is_superuser or current_user.role == UserRole.SUPER_ADMIN) else "Standard Role Logic + Additive Fallbacks"
+    
     return {
         "user_id": current_user.id,
         "email": current_user.email,
         "role_raw": role_raw,
         "role_normalized": role_normalized,
-        "is_superuser": current_user.is_superuser,
+        "is_superuser": bool(current_user.is_superuser),
         "db_permissions": db_result,
         "final_permissions": final_perms,
-        "logic_summary": "Superuser Bypass" if current_user.is_superuser else "Standard Role Logic + Additive Fallbacks"
+        "logic_summary": strategy,
+        "debug_user_object": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "role_field_type": str(type(current_user.role)),
+            "role_field_value": current_user.role,
+            "is_active": current_user.is_active,
+            "is_superuser": current_user.is_superuser
+        }
     }
 
 @router.get("/my", response_model=Dict[str, bool])
@@ -48,9 +62,9 @@ def get_my_permissions(
     """
     Get permissions for the current logged in user.
     """
-
-    if current_user.is_superuser or current_user.role == UserRole.SUPER_ADMIN:
-
+    # 1. Handle Superuser / SuperAdmin first
+    role_raw = current_user.role or ""
+    if current_user.is_superuser or role_raw == UserRole.SUPER_ADMIN:
         all_perms_query = db.query(RolePermission.permission_key).distinct().all()
         all_perms = [p[0] for p in all_perms_query]
 
@@ -64,16 +78,18 @@ def get_my_permissions(
         keys = list(set(all_perms + default_keys))
         return {k: True for k in keys}
 
+    # 2. Fetch from database with defensive checks
     from sqlalchemy import func
-    permissions = db.query(RolePermission).filter(
-        func.lower(RolePermission.role) == current_user.role.lower()
-    ).all()
+    result = {}
+    if current_user.role:
+        permissions = db.query(RolePermission).filter(
+            func.lower(RolePermission.role) == str(current_user.role).lower()
+        ).all()
+        result = {p.permission_key: p.is_enabled for p in permissions}
     
-    result = {p.permission_key: p.is_enabled for p in permissions}
-    
-    # NORMALIZATION & FALLBACKS
+    # 3. NORMALIZATION & FALLBACKS
     # This ensures that even if DB is missing rows, staff can still function.
-    role_name = str(current_user.role).lower().replace("_", "").replace(" ", "")
+    role_name = str(role_raw).lower().replace("_", "").replace(" ", "")
     
     # Mandated Permissions for Staff (Always True even if False in DB)
     mandated_perms = []

@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [showRawJson, setShowRawJson] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const Login: React.FC = () => {
   const runDiagnostic = async (roleEmail: string, rolePass: string) => {
     setIsDiagnosing(true);
     setDiagnosticData(null);
+    setShowRawJson(false);
     setIsDiagnosticOpen(true);
     
     try {
@@ -339,37 +341,69 @@ const Login: React.FC = () => {
                 </div>
               ) : diagnosticData ? (
                 <div className="space-y-6">
-                  {/* Summary Grid */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Raw Role (DB)</p>
-                      <p className="text-sm font-bold text-slate-900">{diagnosticData.role_raw}</p>
-                    </div>
-                    <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100">
-                      <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">Normalized Role</p>
-                      <p className="text-sm font-bold text-sky-700">{diagnosticData.role_normalized}</p>
-                    </div>
+                  <div className="flex justify-end -mb-4">
+                    <button 
+                      onClick={() => setShowRawJson(!showRawJson)}
+                      className="text-[10px] font-black uppercase tracking-tighter text-sky-600 hover:text-sky-700 flex items-center gap-1"
+                    >
+                      {showRawJson ? 'Hide Debug Info' : 'Show Debug Info'}
+                    </button>
                   </div>
 
-                  {/* Permissions List */}
-                  <div>
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Final Effective Permissions</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {Object.entries(diagnosticData.final_permissions || {}).map(([key, val]: [string, any]) => (
-                        <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100">
-                          <span className="text-xs font-bold text-slate-600">{key}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${val ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                            {val ? 'Granted' : 'Denied'}
-                          </span>
+                  {showRawJson ? (
+                    <div className="p-4 rounded-2xl bg-slate-900 overflow-hidden border border-slate-800">
+                      <pre className="text-[10px] font-mono text-emerald-400 overflow-auto max-h-[40vh] leading-tight">
+                        {JSON.stringify(diagnosticData, null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Summary Grid */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Raw Role (DB)</p>
+                          <p className="text-sm font-bold text-slate-900">{diagnosticData.role_raw || <span className="text-rose-400 text-[10px]">EMPTY / NULL</span>}</p>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100">
+                          <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest mb-1">Normalized Role</p>
+                          <p className="text-sm font-bold text-sky-700">{diagnosticData.role_normalized || 'none'}</p>
+                        </div>
+                      </div>
 
-                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                    <p className="text-xs font-bold text-indigo-700">Strategy: {diagnosticData.logic_summary}</p>
-                  </div>
+                      {/* Permissions List */}
+                      <div>
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Final Effective Permissions</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {(diagnosticData.final_permissions && Object.entries(diagnosticData.final_permissions).length > 0) ? (
+                            Object.entries(diagnosticData.final_permissions).map(([key, val]: [string, any]) => (
+                              <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-white border border-slate-100">
+                                <span className="text-xs font-bold text-slate-600">{key}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase ${val ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                  {val ? 'Granted' : 'Denied'}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="col-span-full py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 text-xs font-bold font-mono">
+                              NO_PERMISSIONS_RESOLVED
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex flex-col gap-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                          <p className="text-xs font-bold text-indigo-700">Strategy: {diagnosticData.logic_summary || 'UNKNOWN'}</p>
+                        </div>
+                        {diagnosticData.debug_user_object && (
+                          <p className="text-[9px] font-medium text-indigo-400 leading-tight border-t border-indigo-100 pt-2 font-mono">
+                            DB ID: {diagnosticData.user_id} | Raw Value: {String(diagnosticData.debug_user_object.role_field_value)} | Type: {diagnosticData.debug_user_object.role_field_type}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : null}
             </div>
